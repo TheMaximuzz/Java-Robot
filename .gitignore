@@ -1,4 +1,17 @@
-/.metadata
-/robots/.settings
-/robots/bin
+# === Eclipse ===
+/.metadata/
+*.classpath
+*.project
+/robots/.settings/
+/robots/bin/
 eclipse.bat
+
+# === IntelliJ IDEA ===
+/.idea/
+/*.iml
+
+# === Java-артефакты ===
+*.class
+
+# === Игнорируем .xml-файлы ===
+*.xml
