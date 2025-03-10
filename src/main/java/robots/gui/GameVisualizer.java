@@ -1,6 +1,6 @@
-package gui;
+package robots.gui;
 
-import log.Logger;
+import robots.log.Logger;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Graphics;

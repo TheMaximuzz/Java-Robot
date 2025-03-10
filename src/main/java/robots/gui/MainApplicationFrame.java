@@ -1,4 +1,4 @@
-package gui;
+package robots.gui;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -7,7 +7,7 @@ import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 
-import log.Logger;
+import robots.log.Logger;
 
 public class MainApplicationFrame extends JFrame {
     private final JDesktopPane desktopPane = new JDesktopPane();

@@ -1,4 +1,4 @@
-package gui;
+package robots.gui;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -8,7 +8,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.event.KeyEvent;
 
-import log.Logger;
+import robots.log.Logger;
 
 public class ApplicationMenuBar extends JMenuBar {
 
