@@ -11,14 +11,13 @@ import java.util.Collections;
  * их лишь накапливает. Надо же, чтобы количество сообщений в логе было ограничено
  * величиной m_iQueueLength (т.е. реально нужна очередь сообщений
  * ограниченного размера)
- * x
  */
 public class LogWindowSource
 {
     private int m_iQueueLength;
 
     private ArrayList<LogEntry> m_messages; // список сообщений лога (все сообщения оттуда)
-    private final ArrayList<LogChangeListener> m_listeners;
+    protected final ArrayList<LogChangeListener> m_listeners;
     private volatile LogChangeListener[] m_activeListeners;
 
     public LogWindowSource(int iQueueLength)
