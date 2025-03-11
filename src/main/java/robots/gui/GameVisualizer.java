@@ -23,9 +23,9 @@ public class GameVisualizer extends JPanel {
         return timer;
     }
 
-    private volatile double m_robotPositionX = 100;
-    private volatile double m_robotPositionY = 100;
-    private volatile double m_robotDirection = 0;
+    protected volatile double m_robotPositionX = 100;
+    protected volatile double m_robotPositionY = 100;
+    protected volatile double m_robotDirection = 0;
 
     private volatile int m_targetPositionX = 150;
     private volatile int m_targetPositionY = 100;
@@ -126,7 +126,7 @@ public class GameVisualizer extends JPanel {
         return value;
     }
 
-    private void moveRobot(double velocity, double angularVelocity, double duration) {
+    public void moveRobot(double velocity, double angularVelocity, double duration) {
         velocity = applyLimits(velocity, 0, maxVelocity);
         angularVelocity = applyLimits(angularVelocity, -maxAngularVelocity, maxAngularVelocity);
 
