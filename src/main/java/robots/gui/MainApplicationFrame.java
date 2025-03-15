@@ -2,12 +2,15 @@ package robots.gui;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 
 import robots.log.Logger;
+import robots.util.ConfirmCloseHelper;
 
 public class MainApplicationFrame extends JFrame {
     private final JDesktopPane desktopPane = new JDesktopPane();
@@ -15,7 +18,7 @@ public class MainApplicationFrame extends JFrame {
     public MainApplicationFrame() {
         Logger.debug("Приложение запущено");
 
-        // Установка размеров окна
+        // установка размеров окна
         int inset = 100;
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds(inset, inset,
@@ -24,18 +27,27 @@ public class MainApplicationFrame extends JFrame {
 
         setContentPane(desktopPane);
 
-        // Создание и добавление лог-окна
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
-        // Создание и добавление игрового окна
         GameWindow gameWindow = new GameWindow();
         gameWindow.setSize(400,  400);
         addWindow(gameWindow);
 
-        // Установка MenuBar
         setJMenuBar(new ApplicationMenuBar());
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        // обработчик закрытия окна
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (ConfirmCloseHelper.confirmClose()) {
+                    dispose();
+                }
+            }
+        });
+
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        //setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
     protected LogWindow createLogWindow() {

@@ -3,14 +3,21 @@ package robots.gui;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.awt.TextArea;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
 
 import robots.log.LogChangeListener;
 import robots.log.LogEntry;
 import robots.log.LogWindowSource;
 import robots.log.Logger;
+import robots.util.ConfirmCloseHelper;
+
+
 
 public class LogWindow extends JInternalFrame implements LogChangeListener
 {
@@ -31,6 +38,17 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
         getContentPane().add(panel);
         pack();
         updateLogContent();
+
+        // Добавляем обработчик закрытия окна
+        addInternalFrameListener(new InternalFrameAdapter() {
+            @Override
+            public void internalFrameClosing(InternalFrameEvent e) {
+                if (ConfirmCloseHelper.confirmClose()) {
+                    dispose();
+                }
+            }
+        });
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
     }
 
     private void updateLogContent()

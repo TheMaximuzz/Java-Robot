@@ -5,7 +5,7 @@ import robots.gui.LogWindow;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TestLogsTask1 {
+class TestLogs {
 
     // Тест 1 - Ограничение размера строк логов
     @Test
