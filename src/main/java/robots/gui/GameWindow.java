@@ -27,11 +27,13 @@ public class GameWindow extends JInternalFrame {
         addInternalFrameListener(new InternalFrameAdapter() {
             @Override
             public void internalFrameClosing(InternalFrameEvent e) {
-                if (ConfirmCloseHelper.confirmClose()) {
+                ConfirmCloseHelper closeHelper = new ConfirmCloseHelper();
+                if (closeHelper.confirmClose(GameWindow.this)) {
                     dispose();
                 }
             }
         });
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
     }
 }

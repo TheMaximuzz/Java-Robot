@@ -39,16 +39,19 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
         pack();
         updateLogContent();
 
-        // Добавляем обработчик закрытия окна
+        // обработчик закрытия окна
         addInternalFrameListener(new InternalFrameAdapter() {
             @Override
             public void internalFrameClosing(InternalFrameEvent e) {
-                if (ConfirmCloseHelper.confirmClose()) {
+                ConfirmCloseHelper closeHelper = new ConfirmCloseHelper();
+                if (closeHelper.confirmClose(LogWindow.this)) {
                     dispose();
                 }
             }
         });
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
+
     }
 
     private void updateLogContent()

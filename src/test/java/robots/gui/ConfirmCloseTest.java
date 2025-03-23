@@ -1,67 +1,93 @@
-package robots.util;
+package robots.gui;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import javax.swing.*;
-import java.util.ResourceBundle;
+import javax.swing.event.InternalFrameEvent;
+
+import robots.util.ConfirmCloseHelper;
 
 import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
-public class ConfirmCloseHelperTest {
+public class ConfirmCloseTest {
 
+    private JInternalFrame mockFrame;
+    private ConfirmCloseHelper closeHelper;
+
+    @Before
+    public void setUp() {
+        mockFrame = Mockito.mock(JInternalFrame.class);
+        closeHelper = new ConfirmCloseHelper();
+    }
+
+    // Тест закрытия окна при выборе "Да"
     @Test
-    public void testConfirmClose_YesOption() {
-        // Мокаем ResourceBundle
-        ResourceBundle mockBundle = Mockito.mock(ResourceBundle.class);
-        when(mockBundle.getString("confirmExit")).thenReturn("Вы уверены, что хотите закрыть это окно?");
-        when(mockBundle.getString("confirmClose")).thenReturn("Подтверждение закрытия");
-
-        // Мокаем JOptionPane
+    public void testInternalFrameClosing_YesOption() {
         try (MockedStatic<JOptionPane> mockedOptionPane = Mockito.mockStatic(JOptionPane.class)) {
             mockedOptionPane.when(() -> JOptionPane.showConfirmDialog(
-                    any(JComponent.class), // Любой JComponent
-                    eq("Вы уверены, что хотите закрыть это окно?"), // Сообщение
-                    eq("Подтверждение закрытия"), // Заголовок
-                    eq(JOptionPane.YES_NO_OPTION) // Тип опций
-            )).thenReturn(JOptionPane.YES_OPTION); // Пользователь выбирает "Да"
+                    eq(mockFrame),
+                    eq("Вы действительно хотите закрыть окно?"),
+                    eq("Подтверждение закрытия"),
+                    eq(JOptionPane.YES_NO_OPTION)
+            )).thenReturn(JOptionPane.YES_OPTION);
 
-            // Создаём ConfirmCloseHelper
-            ConfirmCloseHelper closeHelper = new ConfirmCloseHelper(mockBundle);
+            closeHelper.internalFrameClosing(new InternalFrameEvent(mockFrame, InternalFrameEvent.INTERNAL_FRAME_CLOSING));
 
-            // Вызываем метод confirmClose
-            boolean result = closeHelper.confirmClose(new JPanel());
+            verify(mockFrame, times(1)).dispose();
+        }
+    }
 
-            // Проверяем, что метод вернул true
+    // Тест не закрытия окна при выборе "Нет"
+    @Test
+    public void testInternalFrameClosing_NoOption() {
+        try (MockedStatic<JOptionPane> mockedOptionPane = Mockito.mockStatic(JOptionPane.class)) {
+            mockedOptionPane.when(() -> JOptionPane.showConfirmDialog(
+                    eq(mockFrame),
+                    eq("Вы действительно хотите закрыть окно?"),
+                    eq("Подтверждение закрытия"),
+                    eq(JOptionPane.YES_NO_OPTION)
+            )).thenReturn(JOptionPane.NO_OPTION);
+
+            closeHelper.internalFrameClosing(new InternalFrameEvent(mockFrame, InternalFrameEvent.INTERNAL_FRAME_CLOSING));
+
+            verify(mockFrame, never()).dispose();
+        }
+    }
+
+    // Тест возврата true при выборе "да"
+    @Test
+    public void testConfirmClose_YesOption() {
+        try (MockedStatic<JOptionPane> mockedOptionPane = Mockito.mockStatic(JOptionPane.class)) {
+            mockedOptionPane.when(() -> JOptionPane.showConfirmDialog(
+                    eq(mockFrame),
+                    eq("Вы действительно хотите закрыть окно?"),
+                    eq("Подтверждение закрытия"),
+                    eq(JOptionPane.YES_NO_OPTION)
+            )).thenReturn(JOptionPane.YES_OPTION);
+
+            boolean result = closeHelper.confirmClose(mockFrame);
+
             assertTrue(result);
         }
     }
 
+    // Тест возврата false при выборе "нет"
     @Test
     public void testConfirmClose_NoOption() {
-        // Мокаем ResourceBundle
-        ResourceBundle mockBundle = Mockito.mock(ResourceBundle.class);
-        when(mockBundle.getString("confirmExit")).thenReturn("Вы уверены, что хотите закрыть это окно?");
-        when(mockBundle.getString("confirmClose")).thenReturn("Подтверждение закрытия");
-
-        // Мокаем JOptionPane
         try (MockedStatic<JOptionPane> mockedOptionPane = Mockito.mockStatic(JOptionPane.class)) {
             mockedOptionPane.when(() -> JOptionPane.showConfirmDialog(
-                    any(JComponent.class), // Любой JComponent
-                    eq("Вы уверены, что хотите закрыть это окно?"), // Сообщение
-                    eq("Подтверждение закрытия"), // Заголовок
-                    eq(JOptionPane.YES_NO_OPTION) // Тип опций
-            )).thenReturn(JOptionPane.NO_OPTION); // Пользователь выбирает "Нет"
+                    eq(mockFrame),
+                    eq("Вы действительно хотите закрыть окно?"),
+                    eq("Подтверждение закрытия"),
+                    eq(JOptionPane.YES_NO_OPTION)
+            )).thenReturn(JOptionPane.NO_OPTION);
 
-            // Создаём ConfirmCloseHelper
-            ConfirmCloseHelper closeHelper = new ConfirmCloseHelper(mockBundle);
+            boolean result = closeHelper.confirmClose(mockFrame);
 
-            // Вызываем метод confirmClose
-            boolean result = closeHelper.confirmClose(new JPanel());
-
-            // Проверяем, что метод вернул false
             assertFalse(result);
         }
     }

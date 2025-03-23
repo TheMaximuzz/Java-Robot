@@ -1,22 +1,30 @@
 package robots.gui;
 
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 import java.awt.event.KeyEvent;
-
+import robots.util.ConfirmCloseHelper;
 import robots.log.Logger;
 
 public class ApplicationMenuBar extends JMenuBar {
 
-    public ApplicationMenuBar() {
+
+    private final ConfirmCloseHelper closeHelper = new ConfirmCloseHelper();
+    private final JFrame parentFrame;
+    public ApplicationMenuBar(JFrame parentFrame) {
+        this.parentFrame = parentFrame;
         initMenuBar();
     }
 
     private void initMenuBar() {
+
+        JMenu gameMenu = new JMenu("Игра");
+        gameMenu.setMnemonic(KeyEvent.VK_F);
+
+        JMenuItem exitItem = new JMenuItem("Выйти");
+        exitItem.setMnemonic(KeyEvent.VK_X);
+        exitItem.addActionListener((event) -> exitApplication());
+        gameMenu.add(exitItem);
+
         JMenu lookAndFeelMenu = new JMenu("Режим отображения");
         lookAndFeelMenu.setMnemonic(KeyEvent.VK_V);
         lookAndFeelMenu.getAccessibleContext().setAccessibleDescription(
@@ -41,6 +49,13 @@ public class ApplicationMenuBar extends JMenuBar {
 
         add(lookAndFeelMenu);
         add(testMenu);
+        add(gameMenu);
+    }
+
+    private void exitApplication() {
+        if (closeHelper.confirmClose(parentFrame)) {
+            System.exit(0);
+        }
     }
 
     private void setLookAndFeel(String className) {
