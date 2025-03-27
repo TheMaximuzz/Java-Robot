@@ -1,31 +1,17 @@
 package robots.gui;
 
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
-import java.awt.TextArea;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
-import javax.swing.JInternalFrame;
-import javax.swing.JPanel;
-import javax.swing.event.InternalFrameAdapter;
-import javax.swing.event.InternalFrameEvent;
-
 import robots.log.LogChangeListener;
 import robots.log.LogEntry;
 import robots.log.LogWindowSource;
 import robots.log.Logger;
-import robots.util.ConfirmCloseHelper;
+import javax.swing.*;
+import java.awt.*;
 
-
-
-public class LogWindow extends JInternalFrame implements LogChangeListener
-{
+public class LogWindow extends BaseInternalFrame implements LogChangeListener {
     private LogWindowSource m_logSource;
     private TextArea m_logContent;
 
-    public LogWindow(LogWindowSource logSource)
-    {
+    public LogWindow(LogWindowSource logSource) {
         super("Протокол работы", true, true, true, true);
         m_logSource = logSource;
         m_logSource.registerListener(this);
@@ -38,27 +24,11 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
         getContentPane().add(panel);
         pack();
         updateLogContent();
-
-        // обработчик закрытия окна
-        addInternalFrameListener(new InternalFrameAdapter() {
-            @Override
-            public void internalFrameClosing(InternalFrameEvent e) {
-                ConfirmCloseHelper closeHelper = new ConfirmCloseHelper();
-                if (closeHelper.confirmClose(LogWindow.this)) {
-                    dispose();
-                }
-            }
-        });
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-
-
     }
 
-    private void updateLogContent()
-    {
+    private void updateLogContent() {
         StringBuilder content = new StringBuilder();
-        for (LogEntry entry : m_logSource.all())
-        {
+        for (LogEntry entry : m_logSource.all()) {
             content.append(entry.getMessage()).append("\n");
         }
         m_logContent.setText(content.toString());
@@ -66,8 +36,7 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
     }
 
     @Override
-    public void onLogChanged()
-    {
+    public void onLogChanged() {
         EventQueue.invokeLater(this::updateLogContent);
     }
 
@@ -76,5 +45,10 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
         m_logSource.unregisterListener(this);
         Logger.debug("Окно логов закрыто");
         super.dispose();
+    }
+
+    @Override
+    protected boolean confirmClose() {
+        return closeHelper.showConfirmationDialog(this, "Вы действительно хотите закрыть окно логов?", "Подтверждение закрытия");
     }
 }

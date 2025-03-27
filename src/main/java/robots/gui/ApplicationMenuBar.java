@@ -2,27 +2,23 @@ package robots.gui;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
-import robots.util.ConfirmCloseHelper;
 import robots.log.Logger;
 
 public class ApplicationMenuBar extends JMenuBar {
+    private final MainApplicationFrame parentFrame;
 
-
-    private final ConfirmCloseHelper closeHelper = new ConfirmCloseHelper();
-    private final JFrame parentFrame;
-    public ApplicationMenuBar(JFrame parentFrame) {
+    public ApplicationMenuBar(MainApplicationFrame parentFrame) {
         this.parentFrame = parentFrame;
         initMenuBar();
     }
 
     private void initMenuBar() {
-
         JMenu gameMenu = new JMenu("Игра");
         gameMenu.setMnemonic(KeyEvent.VK_F);
 
         JMenuItem exitItem = new JMenuItem("Выйти");
         exitItem.setMnemonic(KeyEvent.VK_X);
-        exitItem.addActionListener((event) -> exitApplication());
+        exitItem.addActionListener((event) -> parentFrame.exitApplication()); // Вызываем метод из MainApplicationFrame
         gameMenu.add(exitItem);
 
         JMenu lookAndFeelMenu = new JMenu("Режим отображения");
@@ -50,12 +46,6 @@ public class ApplicationMenuBar extends JMenuBar {
         add(lookAndFeelMenu);
         add(testMenu);
         add(gameMenu);
-    }
-
-    private void exitApplication() {
-        if (closeHelper.confirmClose(parentFrame)) {
-            System.exit(0);
-        }
     }
 
     private void setLookAndFeel(String className) {

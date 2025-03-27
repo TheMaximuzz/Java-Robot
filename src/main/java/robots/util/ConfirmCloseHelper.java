@@ -46,7 +46,7 @@ public class ConfirmCloseHelper implements InternalFrameListener {
         return showConfirmationDialog(parentFrame, "Вы действительно хотите закрыть приложение?", "Подтверждение выхода");
     }
 
-    private boolean showConfirmationDialog(Object parent, String message, String title) {
+    public boolean showConfirmationDialog(Object parent, String message, String title) {
         int option = JOptionPane.showConfirmDialog(
                 parent instanceof JComponent ? (JComponent) parent : null,
                 message,
