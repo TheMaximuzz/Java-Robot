@@ -20,7 +20,6 @@ class TestLogs {
 
         assertEquals(4, logSource.message_size());
 
-
         Iterable<LogEntry> logs = logSource.all();
         int count = 0;
         for (LogEntry entry : logs) {
