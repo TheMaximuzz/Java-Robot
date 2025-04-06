@@ -6,12 +6,9 @@ import java.util.ResourceBundle;
 
 public class GameWindow extends BaseInternalFrame {
     private final GameVisualizer m_visualizer;
-    private ResourceBundle messages;
 
     public GameWindow() {
-        super("", true, true, true, true);
-        messages = ResourceBundle.getBundle("messages");
-        setTitle(messages.getString("gameWindowTitle"));
+        super(true, true, true, true);
         m_visualizer = new GameVisualizer();
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_visualizer, BorderLayout.CENTER);
@@ -24,11 +21,14 @@ public class GameWindow extends BaseInternalFrame {
         return closeHelper.showConfirmationDialog(this, messages.getString("confirmCloseGameWindow"), messages.getString("confirmCloseTitle"));
     }
 
+    @Override
+    protected String getTitleKey() {
+        return "gameWindowTitle"; // Ключ для заголовка окна игры
+    }
+
+    @Override
     public void updateLanguage(ResourceBundle newMessages) {
-        this.messages = newMessages;
-        super.updateLanguage(messages);
-        setTitle(messages.getString("gameWindowTitle"));
-        revalidate();
-        repaint();
+        super.updateLanguage(newMessages);
+        // Дополнительные обновления интерфейса, если необходимо
     }
 }

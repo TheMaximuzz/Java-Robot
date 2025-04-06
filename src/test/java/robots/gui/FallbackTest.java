@@ -8,6 +8,7 @@ import static org.junit.Assert.assertEquals;
 
 public class FallbackTest {
 
+    //подключаем несуществующий язык => язык == языку системы
     @Test
     public void testFallbackToSystemLanguage() {
         // Сохраняем текущую локаль системы

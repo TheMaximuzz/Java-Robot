@@ -11,12 +11,9 @@ import java.util.ResourceBundle;
 public class LogWindow extends BaseInternalFrame implements LogChangeListener {
     private LogWindowSource m_logSource;
     private TextArea m_logContent;
-    private ResourceBundle messages;
 
     public LogWindow(LogWindowSource logSource) {
-        super("", true, true, true, true);
-        messages = ResourceBundle.getBundle("messages");
-        setTitle(messages.getString("logWindowTitle"));
+        super(true, true, true, true);
         m_logSource = logSource;
         m_logSource.registerListener(this);
         m_logContent = new TextArea("");
@@ -56,12 +53,14 @@ public class LogWindow extends BaseInternalFrame implements LogChangeListener {
         return closeHelper.showConfirmationDialog(this, messages.getString("confirmCloseLogWindow"), messages.getString("confirmCloseTitle"));
     }
 
+    @Override
+    protected String getTitleKey() {
+        return "logWindowTitle"; // Ключ для заголовка окна логов
+    }
+
+    @Override
     public void updateLanguage(ResourceBundle newMessages) {
-        this.messages = newMessages;
-        super.updateLanguage(messages);
-        setTitle(messages.getString("logWindowTitle"));
-        updateLogContent(); // Перестраиваем содержимое лога с новым языком
-        revalidate();
-        repaint();
+        super.updateLanguage(newMessages);
+        updateLogContent(); // Обновляем содержимое лога с учетом нового языка
     }
 }

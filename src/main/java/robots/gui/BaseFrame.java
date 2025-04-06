@@ -4,13 +4,17 @@ import robots.util.ConfirmCloseHelper;
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public abstract class BaseFrame extends JFrame {
     protected final ConfirmCloseHelper closeHelper = new ConfirmCloseHelper();
+    protected ResourceBundle messages;
 
-    public BaseFrame(String title) {
-        super(title);
+    public BaseFrame() {
+        super("");
+        this.messages = ResourceBundle.getBundle("messages", Locale.getDefault());
+        setTitle(messages.getString(getTitleKey())); // Устанавливаем заголовок с помощью getTitleKey()
         initializeClosingBehaviorForFrame();
     }
 
@@ -28,7 +32,13 @@ public abstract class BaseFrame extends JFrame {
 
     protected abstract boolean confirmClose();
 
-    public void updateLanguage(ResourceBundle messages) {
+    protected abstract String getTitleKey(); // Абстрактный метод для получения ключа заголовка
+
+    public void updateLanguage(ResourceBundle newMessages) {
+        this.messages = newMessages;
         closeHelper.updateLanguage(messages);
+        setTitle(messages.getString(getTitleKey())); // Обновляем заголовок при смене языка
+        revalidate();
+        repaint();
     }
 }

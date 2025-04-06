@@ -8,17 +8,12 @@ import java.util.ResourceBundle;
 
 public class MainApplicationFrame extends BaseFrame {
     private final JDesktopPane desktopPane = new JDesktopPane();
-    private ResourceBundle messages;
     private ApplicationMenuBar menuBar;
     private LogWindow logWindow;
     private GameWindow gameWindow;
 
     public MainApplicationFrame() {
-        super("");
-        // Устанавливаем локаль по умолчанию (язык системы)
-        Locale.setDefault(Locale.getDefault());
-        messages = ResourceBundle.getBundle("messages", Locale.getDefault());
-        setTitle(messages.getString("mainWindowTitle"));
+        super();
         Logger.appStarted();
 
         int inset = 100;
@@ -58,6 +53,11 @@ public class MainApplicationFrame extends BaseFrame {
         return closeHelper.confirmClose(this);
     }
 
+    @Override
+    protected String getTitleKey() {
+        return "mainWindowTitle"; // Ключ для заголовка главного окна
+    }
+
     public void exitApplication() {
         if (confirmClose()) {
             System.exit(0);
@@ -72,12 +72,9 @@ public class MainApplicationFrame extends BaseFrame {
     }
 
     private void updateUI() {
-        setTitle(messages.getString("mainWindowTitle"));
+        super.updateLanguage(messages);
         menuBar.updateLanguage(messages);
         logWindow.updateLanguage(messages);
         gameWindow.updateLanguage(messages);
-        updateLanguage(messages);
-        revalidate();
-        repaint();
     }
 }
