@@ -1,18 +1,11 @@
 package robots.gui;
 
 import robots.log.Logger;
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.awt.Dimension;
-
 import javax.swing.JPanel;
 
 public class GameVisualizer extends JPanel {
@@ -27,150 +20,144 @@ public class GameVisualizer extends JPanel {
     protected volatile double m_robotPositionY = 100;
     protected volatile double m_robotDirection = 0;
 
-    private volatile int m_targetPositionX = 150;
-    private volatile int m_targetPositionY = 100;
-
-    private static final double maxVelocity = 0.1;
-    private static final double maxAngularVelocity = 0.001;
+    protected volatile int currentDirection = 0;
+    protected volatile boolean isStopped = false;
+    private static final double speed = 2.0;
 
     public GameVisualizer() {
+
         m_timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 onRedrawEvent();
             }
         }, 0, 50);
+
         m_timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 onModelUpdateEvent();
             }
         }, 0, 10);
-        addMouseListener(new MouseAdapter() {
+
+        setFocusable(true);
+        requestFocusInWindow();
+        addKeyListener(new KeyAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                setTargetPosition(e.getPoint());
-                repaint();
+            public void keyPressed(KeyEvent e) {
+                int newDirection = currentDirection;
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_UP:
+                        newDirection = 3;
+                        m_robotDirection = Math.PI / 2;
+                        break;
+                    case KeyEvent.VK_DOWN:
+                        newDirection = 1;
+                        m_robotDirection = 3 * Math.PI / 2;
+                        break;
+                    case KeyEvent.VK_LEFT:
+                        newDirection = 2;
+                        m_robotDirection = Math.PI;
+                        break;
+                    case KeyEvent.VK_RIGHT:
+                        newDirection = 0;
+                        m_robotDirection = 0;
+                        break;
+                }
+                if (newDirection != currentDirection) {
+                    currentDirection = newDirection;
+                    if (canMoveInDirection()) {
+                        isStopped = false;
+                    }
+                }
             }
         });
-        setDoubleBuffered(true);
-    }
 
-    protected void setTargetPosition(Point p) {
-        Dimension size = getSize();
-        // Ограничиваем координаты цели размерами окна
-        m_targetPositionX = Math.max(0, Math.min(p.x, size.width));
-        m_targetPositionY = Math.max(0, Math.min(p.y, size.height));
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                //System.out.println("GameVisualizer resized to: " + getWidth() + "x" + getHeight());
+            }
+        });
+
+        setDoubleBuffered(true);
     }
 
     protected void onRedrawEvent() {
         EventQueue.invokeLater(this::repaint);
     }
 
-    private static double distance(double x1, double y1, double x2, double y2) {
-        double diffX = x1 - x2;
-        double diffY = y1 - y2;
-        return Math.sqrt(diffX * diffX + diffY * diffY);
-    }
-
-    private static double angleTo(double fromX, double fromY, double toX, double toY) {
-        double diffX = toX - fromX;
-        double diffY = toY - fromY;
-
-        return asNormalizedRadians(Math.atan2(diffY, diffX));
-    }
-
     protected void onModelUpdateEvent() {
-        double distanceToTarget = distance(m_targetPositionX, m_targetPositionY, m_robotPositionX, m_robotPositionY);
-        if (distanceToTarget < 0.5) {
-            return;
+        if (!isStopped) {
+            moveRobot();
         }
-
-        double targetAngle = angleTo(m_robotPositionX, m_robotPositionY, m_targetPositionX, m_targetPositionY);
-        double angleDiff = asNormalizedRadians(targetAngle - m_robotDirection);
-        if (angleDiff > Math.PI) {
-            angleDiff -= 2 * Math.PI;
-        } else if (angleDiff < -Math.PI) {
-            angleDiff += 2 * Math.PI;
-        }
-
-        double velocity;
-        double angularVelocity;
-        double minVelocity = 0.01;
-
-        double desiredAngularVelocity = 0;
-        if (Math.abs(Math.sin(angleDiff)) > 1e-6) {
-            desiredAngularVelocity = 2 * maxVelocity * Math.sin(angleDiff) / distanceToTarget;
-        } else {
-            desiredAngularVelocity = 0;
-        }
-
-        if (Math.abs(desiredAngularVelocity) > maxAngularVelocity) {
-            angularVelocity = Math.signum(desiredAngularVelocity) * maxAngularVelocity;
-            velocity = maxAngularVelocity * distanceToTarget / (2 * Math.abs(Math.sin(angleDiff)));
-            velocity = Math.min(maxVelocity, Math.max(minVelocity, velocity));
-        } else {
-            velocity = maxVelocity;
-            angularVelocity = desiredAngularVelocity;
-        }
-
-        moveRobot(velocity, angularVelocity, 10);
     }
 
+    protected void moveRobot() {
+        double newX = m_robotPositionX;
+        double newY = m_robotPositionY;
 
-    private static double applyLimits(double value, double min, double max) {
-        if (value < min)
-            return min;
-        if (value > max)
-            return max;
-        return value;
-    }
-
-    public void moveRobot(double velocity, double angularVelocity, double duration) {
-        velocity = applyLimits(velocity, 0, maxVelocity);
-        angularVelocity = applyLimits(angularVelocity, -maxAngularVelocity, maxAngularVelocity);
-
-        double newX = m_robotPositionX + velocity / angularVelocity *
-                (Math.sin(m_robotDirection + angularVelocity * duration) -
-                        Math.sin(m_robotDirection));
-        if (!Double.isFinite(newX)) {
-            newX = m_robotPositionX + velocity * duration * Math.cos(m_robotDirection);
+        switch (currentDirection) {
+            case 0: // Вправо
+                newX += speed;
+                break;
+            case 1: // Вниз
+                newY += speed;
+                break;
+            case 2: // Влево
+                newX -= speed;
+                break;
+            case 3: // Вверх
+                newY -= speed;
+                break;
         }
 
-        double newY = m_robotPositionY - velocity / angularVelocity *
-                (Math.cos(m_robotDirection + angularVelocity * duration) -
-                        Math.cos(m_robotDirection));
-        if (!Double.isFinite(newY)) {
-            newY = m_robotPositionY + velocity * duration * Math.sin(m_robotDirection);
+        boolean hitBoundary = false;
+
+        int currentWidth = getWidth();
+        int currentHeight = getHeight();
+
+        if (newX < 0) {
+            newX = 0;
+            hitBoundary = true;
+        }
+        if (newY < 0) {
+            newY = 0;
+            hitBoundary = true;
+        }
+        if (newX > currentWidth) {
+            newX = currentWidth;
+            hitBoundary = true;
+        }
+        if (newY > currentHeight) {
+            newY = currentHeight;
+            hitBoundary = true;
         }
 
-        // Ограничение по границам окна
-        Dimension size = getSize();
-        if (newX < 0) newX = 0;
-        if (newY < 0) newY = 0;
-        if (newX > size.width) newX = size.width;
-        if (newY > size.height) newY = size.height;
-
+        if (hitBoundary) {
+            isStopped = true;
+        }
 
         m_robotPositionX = newX;
         m_robotPositionY = newY;
-        double newDirection = asNormalizedRadians(m_robotDirection + angularVelocity * duration);
-        m_robotDirection = newDirection;
     }
 
+    private boolean canMoveInDirection() {
+        int currentWidth = getWidth();
+        int currentHeight = getHeight();
 
-    private static double asNormalizedRadians(double angle) {
-        while (angle < 0) {
-            angle += 2 * Math.PI;
+        switch (currentDirection) {
+            case 0: // Вправо
+                return m_robotPositionX < currentWidth;
+            case 1: // Вниз
+                return m_robotPositionY < currentHeight;
+            case 2: // Влево
+                return m_robotPositionX > 0;
+            case 3: // Вверх
+                return m_robotPositionY > 0;
+            default:
+                return false;
         }
-        while (angle >= 2 * Math.PI) {
-            angle -= 2 * Math.PI;
-        }
-        return angle;
-    }
-
-    private static int round(double value) {
-        return (int) (value + 0.5);
     }
 
     @Override
@@ -178,7 +165,10 @@ public class GameVisualizer extends JPanel {
         super.paint(g);
         Graphics2D g2d = (Graphics2D) g;
         drawRobot(g2d, round(m_robotPositionX), round(m_robotPositionY), m_robotDirection);
-        drawTarget(g2d, m_targetPositionX, m_targetPositionY);
+    }
+
+    private static int round(double value) {
+        return (int) (value + 0.5);
     }
 
     private static void fillOval(Graphics g, int centerX, int centerY, int diam1, int diam2) {
@@ -202,14 +192,5 @@ public class GameVisualizer extends JPanel {
         fillOval(g, robotCenterX + 10, robotCenterY, 5, 5);
         g.setColor(Color.BLACK);
         drawOval(g, robotCenterX + 10, robotCenterY, 5, 5);
-    }
-
-    private void drawTarget(Graphics2D g, int x, int y) {
-        AffineTransform t = AffineTransform.getRotateInstance(0, 0, 0);
-        g.setTransform(t);
-        g.setColor(Color.GREEN);
-        fillOval(g, x, y, 5, 5);
-        g.setColor(Color.BLACK);
-        drawOval(g, x, y, 5, 5);
     }
 }
