@@ -13,22 +13,23 @@ public class GameWindow extends BaseInternalFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_visualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
-        pack();
+        setResizable(true);
     }
 
     @Override
     protected boolean confirmClose() {
-        return closeHelper.showConfirmationDialog(this, messages.getString("confirmCloseGameWindow"), messages.getString("confirmCloseTitle"));
+        return closeHelper.showConfirmationDialog(this,
+                messages.getString("confirmCloseGameWindow"),
+                messages.getString("confirmCloseTitle"));
     }
 
     @Override
     protected String getTitleKey() {
-        return "gameWindowTitle"; // Ключ для заголовка окна игры
+        return "gameWindowTitle";
     }
 
     @Override
     public void updateLanguage(ResourceBundle newMessages) {
         super.updateLanguage(newMessages);
-        // Дополнительные обновления интерфейса, если необходимо
     }
 }

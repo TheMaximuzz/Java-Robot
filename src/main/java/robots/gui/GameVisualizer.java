@@ -2,28 +2,39 @@ package robots.gui;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.AffineTransform;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.JPanel;
 
 public class GameVisualizer extends JPanel {
     private final Timer m_timer = initTimer();
+    private final MazeGenerator mazeGenerator;
+    private final int robotSize;
+    private volatile int robotGridX; // Координаты центра пакмена в ячейках
+    private volatile int robotGridY;
+    private volatile int targetGridX; // Целевые координаты для анимации
+    private volatile int targetGridY;
+    private volatile float animationProgress = 1.0f; // Прогресс анимации (0.0 - начало, 1.0 - конец)
+    private static final float animationSpeed = 0.25f; // Ускоряем анимацию для плавности (было 0.15f)
+    private volatile int currentDirection = -1; // -1: нет движения, 0: вправо, 1: вниз, 2: влево, 3: вверх
+    private volatile int pendingDirection = -1; // Ожидаемое направление
+    private volatile boolean isStopped = false;
 
     private static Timer initTimer() {
         Timer timer = new Timer("events generator", true);
         return timer;
     }
 
-    protected volatile double m_robotPositionX = 100;
-    protected volatile double m_robotPositionY = 100;
-    protected volatile double m_robotDirection = 0;
-
-    protected volatile int currentDirection = 0;
-    protected volatile boolean isStopped = false;
-    private static final double speed = 2.0;
-
     public GameVisualizer() {
+        mazeGenerator = new MazeGenerator(800, 600, 32);
+        robotSize = mazeGenerator.getBlockSize() / 2; // 16
+
+        // Устанавливаем начальную позицию пакмена
+        Point startPos = mazeGenerator.getRandomFreePosition();
+        robotGridX = startPos.x / mazeGenerator.getBlockSize();
+        robotGridY = startPos.y / mazeGenerator.getBlockSize();
+        targetGridX = robotGridX;
+        targetGridY = robotGridY;
 
         m_timer.schedule(new TimerTask() {
             @Override
@@ -37,49 +48,39 @@ public class GameVisualizer extends JPanel {
             public void run() {
                 onModelUpdateEvent();
             }
-        }, 0, 10);
+        }, 0, 50); // Ускоряем логику: 50 мс (~20 ячеек/с)
 
         setFocusable(true);
         requestFocusInWindow();
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                int newDirection = currentDirection;
+                int newDirection = -1;
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_UP:
                         newDirection = 3;
-                        m_robotDirection = Math.PI / 2;
                         break;
                     case KeyEvent.VK_DOWN:
                         newDirection = 1;
-                        m_robotDirection = 3 * Math.PI / 2;
                         break;
                     case KeyEvent.VK_LEFT:
                         newDirection = 2;
-                        m_robotDirection = Math.PI;
                         break;
                     case KeyEvent.VK_RIGHT:
                         newDirection = 0;
-                        m_robotDirection = 0;
                         break;
                 }
-                if (newDirection != currentDirection) {
-                    currentDirection = newDirection;
-                    if (canMoveInDirection()) {
-                        isStopped = false;
+                if (newDirection != -1 && newDirection != pendingDirection) {
+                    pendingDirection = newDirection;
+                    if (animationProgress >= 1.0f) {
+                        isStopped = false; // Разрешаем движение, если анимация завершена
                     }
                 }
             }
         });
 
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                //System.out.println("GameVisualizer resized to: " + getWidth() + "x" + getHeight());
-            }
-        });
-
         setDoubleBuffered(true);
+        setBackground(Color.BLACK);
     }
 
     protected void onRedrawEvent() {
@@ -87,75 +88,79 @@ public class GameVisualizer extends JPanel {
     }
 
     protected void onModelUpdateEvent() {
-        if (!isStopped) {
+        if (animationProgress < 1.0f) {
+            // Продолжаем анимацию перемещения
+            animationProgress += animationSpeed;
+            if (animationProgress >= 1.0f) {
+                animationProgress = 1.0f;
+                robotGridX = targetGridX;
+                robotGridY = targetGridY;
+                // Проверяем ожидаемое направление после завершения анимации
+                if (pendingDirection != -1 && pendingDirection != currentDirection) {
+                    currentDirection = pendingDirection;
+                    isStopped = false;
+                }
+            }
+            onRedrawEvent();
+            return;
+        }
+
+        if (isStopped && pendingDirection == -1) {
+            return;
+        }
+
+        // Проверяем текущую линию
+        boolean isOnHorizontalLine = mazeGenerator.isCellFree(robotGridX - 1, robotGridY) ||
+                mazeGenerator.isCellFree(robotGridX + 1, robotGridY);
+        boolean isOnVerticalLine = mazeGenerator.isCellFree(robotGridX, robotGridY - 1) ||
+                mazeGenerator.isCellFree(robotGridX, robotGridY + 1);
+
+        // Если есть ожидаемое направление, пробуем его применить
+        if (pendingDirection != -1) {
+            // Если направление совпадает с линией, двигаемся сразу
+            if ((pendingDirection == 0 || pendingDirection == 2) && isOnHorizontalLine) {
+                currentDirection = pendingDirection;
+            } else if ((pendingDirection == 1 || pendingDirection == 3) && isOnVerticalLine) {
+                currentDirection = pendingDirection;
+            } else {
+                // Пробуем новое направление
+                currentDirection = pendingDirection;
+            }
+        }
+
+        // Если есть текущее направление, продолжаем движение
+        if (currentDirection != -1) {
             moveRobot();
         }
     }
 
     protected void moveRobot() {
-        double newX = m_robotPositionX;
-        double newY = m_robotPositionY;
+        int newGridX = robotGridX;
+        int newGridY = robotGridY;
 
         switch (currentDirection) {
             case 0: // Вправо
-                newX += speed;
+                newGridX += 1;
                 break;
             case 1: // Вниз
-                newY += speed;
+                newGridY += 1;
                 break;
             case 2: // Влево
-                newX -= speed;
+                newGridX -= 1;
                 break;
             case 3: // Вверх
-                newY -= speed;
+                newGridY -= 1;
                 break;
         }
 
-        boolean hitBoundary = false;
-
-        int currentWidth = getWidth();
-        int currentHeight = getHeight();
-
-        if (newX < 0) {
-            newX = 0;
-            hitBoundary = true;
-        }
-        if (newY < 0) {
-            newY = 0;
-            hitBoundary = true;
-        }
-        if (newX > currentWidth) {
-            newX = currentWidth;
-            hitBoundary = true;
-        }
-        if (newY > currentHeight) {
-            newY = currentHeight;
-            hitBoundary = true;
-        }
-
-        if (hitBoundary) {
+        if (mazeGenerator.isCellFree(newGridX, newGridY)) {
+            targetGridX = newGridX;
+            targetGridY = newGridY;
+            animationProgress = 0.0f; // Начинаем анимацию
+            isStopped = false;
+        } else {
             isStopped = true;
-        }
-
-        m_robotPositionX = newX;
-        m_robotPositionY = newY;
-    }
-
-    private boolean canMoveInDirection() {
-        int currentWidth = getWidth();
-        int currentHeight = getHeight();
-
-        switch (currentDirection) {
-            case 0: // Вправо
-                return m_robotPositionX < currentWidth;
-            case 1: // Вниз
-                return m_robotPositionY < currentHeight;
-            case 2: // Влево
-                return m_robotPositionX > 0;
-            case 3: // Вверх
-                return m_robotPositionY > 0;
-            default:
-                return false;
+            // Сохраняем pendingDirection для следующей попытки
         }
     }
 
@@ -163,40 +168,24 @@ public class GameVisualizer extends JPanel {
     public void paint(Graphics g) {
         super.paint(g);
         Graphics2D g2d = (Graphics2D) g;
-        drawRobot(g2d, round(m_robotPositionX), round(m_robotPositionY), m_robotDirection);
+
+        // Рисуем лабиринт
+        mazeGenerator.draw(g2d);
+
+        // Рисуем пакмена
+        drawRobot(g2d);
     }
 
-    private static int round(double value) {
-        return (int) (value + 0.5);
-    }
-
-    private static void fillOval(Graphics g, int centerX, int centerY, int diam1, int diam2) {
-        g.fillOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
-    }
-
-    private static void drawOval(Graphics g, int centerX, int centerY, int diam1, int diam2) {
-        g.drawOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
-    }
-
-    private void drawRobot(Graphics2D g, int x, int y, double direction) {
-        int robotCenterX = round(m_robotPositionX);
-        int robotCenterY = round(m_robotPositionY);
-        if (direction == Math.PI / 2) {
-           direction *= 3;
-        }
-        else if (direction == 3 * Math.PI / 2) {
-            direction /= 3;
-        }
-
-        AffineTransform t = AffineTransform.getRotateInstance(direction, robotCenterX, robotCenterY);
-        g.setTransform(t);
+    private void drawRobot(Graphics2D g) {
         g.setColor(Color.MAGENTA);
-        fillOval(g, robotCenterX, robotCenterY, 30, 10);
+        int blockSize = mazeGenerator.getBlockSize();
+        // Интерполированная позиция для плавного движения
+        float currentX = robotGridX + (targetGridX - robotGridX) * animationProgress;
+        float currentY = robotGridY + (targetGridY - robotGridY) * animationProgress;
+        int robotX = (int) (currentX * blockSize + (blockSize - robotSize) / 2);
+        int robotY = (int) (currentY * blockSize + (blockSize - robotSize) / 2);
+        g.fillOval(robotX, robotY, robotSize, robotSize);
         g.setColor(Color.BLACK);
-        drawOval(g, robotCenterX, robotCenterY, 30, 10);
-        g.setColor(Color.WHITE);
-        fillOval(g, robotCenterX + 10, robotCenterY, 5, 5);
-        g.setColor(Color.BLACK);
-        drawOval(g, robotCenterX + 10, robotCenterY, 5, 5);
+        g.drawOval(robotX, robotY, robotSize, robotSize);
     }
 }
