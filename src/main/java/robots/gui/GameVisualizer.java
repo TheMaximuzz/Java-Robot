@@ -1,6 +1,5 @@
 package robots.gui;
 
-import robots.log.Logger;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
@@ -182,6 +181,13 @@ public class GameVisualizer extends JPanel {
     private void drawRobot(Graphics2D g, int x, int y, double direction) {
         int robotCenterX = round(m_robotPositionX);
         int robotCenterY = round(m_robotPositionY);
+        if (direction == Math.PI / 2) {
+           direction *= 3;
+        }
+        else if (direction == 3 * Math.PI / 2) {
+            direction /= 3;
+        }
+
         AffineTransform t = AffineTransform.getRotateInstance(direction, robotCenterX, robotCenterY);
         g.setTransform(t);
         g.setColor(Color.MAGENTA);
