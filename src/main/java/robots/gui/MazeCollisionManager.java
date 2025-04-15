@@ -4,31 +4,19 @@ import java.awt.*;
 import java.util.List;
 
 public class MazeCollisionManager {
-    private final List<Wall> walls;
+    private final MazeGenerator mazeGenerator;
     private final int blockSize;
 
-    public MazeCollisionManager(List<Wall> walls, int blockSize) {
-        this.walls = walls;
+    public MazeCollisionManager(MazeGenerator mazeGenerator, int blockSize) {
+        this.mazeGenerator = mazeGenerator;
         this.blockSize = blockSize;
     }
 
     public boolean canMoveTo(double x, double y, double robotWidth, double robotHeight) {
-        Rectangle robotBounds = new Rectangle(
-                (int)(x - robotWidth/2),
-                (int)(y - robotHeight/2),
-                (int)robotWidth,
-                (int)robotHeight
-        );
-
-        for (Wall wall : walls) {
-            if (robotBounds.intersects(wall.getBounds())) {
-                return false;
-            }
-        }
-
-        return x >= robotWidth/2 && y >= robotHeight/2 &&
-                x <= (blockSize * 28 - robotWidth/2) &&
-                y <= (blockSize * 31 - robotHeight/2);
+        // Проверяем клетку по сетке
+        int gridX = (int)(x / blockSize);
+        int gridY = (int)(y / blockSize);
+        return mazeGenerator.isCellFree(gridX, gridY);
     }
 
     public Point adjustPosition(double x, double y, double robotWidth, double robotHeight) {

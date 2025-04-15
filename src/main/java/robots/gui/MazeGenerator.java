@@ -115,6 +115,9 @@ public class MazeGenerator {
 
     public Point getRandomFreePosition() {
         Random rand = new Random();
+        if (freeSpaces.isEmpty()) {
+            return new Point(blockSize / 2, blockSize / 2);
+        }
         return freeSpaces.get(rand.nextInt(freeSpaces.size()));
     }
 
