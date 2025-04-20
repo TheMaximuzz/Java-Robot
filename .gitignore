@@ -1,4 +1,4 @@
-# === Eclipse ===
+
 /.metadata/
 *.classpath
 *.project
@@ -6,10 +6,9 @@
 /robots/bin/
 eclipse.bat
 
-# === IntelliJ IDEA ===
+
 /.idea/
 /*.iml
 
-# === Java-артефакты ===
 *.class
-
+*.json

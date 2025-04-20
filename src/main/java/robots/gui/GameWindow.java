@@ -1,7 +1,11 @@
 package robots.gui;
 
+import robots.profile.Profile;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class GameWindow extends BaseInternalFrame {
@@ -31,5 +35,29 @@ public class GameWindow extends BaseInternalFrame {
     @Override
     public void updateLanguage(ResourceBundle newMessages) {
         super.updateLanguage(newMessages);
+    }
+
+    public int getPlayerX() {
+        return m_visualizer.getRobotGridX();
+    }
+
+    public int getPlayerY() {
+        return m_visualizer.getRobotGridY();
+    }
+
+    public List<Profile.MobPosition> getMobPositions() {
+        List<Profile.MobPosition> positions = new ArrayList<>();
+        for (Enemy enemy : m_visualizer.getEnemies()) {
+            positions.add(new Profile.MobPosition(enemy.getGridX(), enemy.getGridY()));
+        }
+        return positions;
+    }
+
+    public void setPlayerPosition(int x, int y) {
+        m_visualizer.setRobotPosition(x, y);
+    }
+
+    public void setMobPositions(List<Profile.MobPosition> positions) {
+        m_visualizer.setEnemyPositions(positions);
     }
 }

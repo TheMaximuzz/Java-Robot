@@ -1,5 +1,7 @@
 package robots.gui;
 
+import robots.profile.Profile;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -306,5 +308,25 @@ public class GameVisualizer extends JPanel {
 
     public int getRobotSize() {
         return robotSize;
+    }
+
+    public void setRobotPosition(int gridX, int gridY) {
+        this.robotGridX = gridX;
+        this.robotGridY = gridY;
+        this.targetGridX = gridX;
+        this.targetGridY = gridY;
+        this.animationProgress = 1.0f;
+        repaint();
+    }
+
+    public void setEnemyPositions(List<Profile.MobPosition> positions) {
+        this.enemies.clear();
+        int enemySize = robotSize - 4;
+        for (Profile.MobPosition pos : positions) {
+            Enemy enemy = new Enemy(mazeGenerator, pos.getMobX(), pos.getMobY(), enemySize);
+            enemy.setMode(currentMode);
+            this.enemies.add(enemy);
+        }
+        repaint();
     }
 }

@@ -14,7 +14,7 @@ public abstract class BaseFrame extends JFrame {
     public BaseFrame() {
         super("");
         this.messages = ResourceBundle.getBundle("messages", Locale.getDefault());
-        setTitle(messages.getString(getTitleKey())); // Устанавливаем заголовок с помощью getTitleKey()
+        setTitle(messages.getString(getTitleKey()));
         initializeClosingBehaviorForFrame();
     }
 
@@ -24,20 +24,22 @@ public abstract class BaseFrame extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (confirmClose()) {
-                    System.exit(0);
+                    onExit(); // Вызываем абстрактный метод
                 }
             }
         });
     }
 
+    protected abstract void onExit(); // Подклассы должны реализовать логику выхода
+
     protected abstract boolean confirmClose();
 
-    protected abstract String getTitleKey(); // Абстрактный метод для получения ключа заголовка
+    protected abstract String getTitleKey();
 
     public void updateLanguage(ResourceBundle newMessages) {
         this.messages = newMessages;
         closeHelper.updateLanguage(messages);
-        setTitle(messages.getString(getTitleKey())); // Обновляем заголовок при смене языка
+        setTitle(messages.getString(getTitleKey()));
         revalidate();
         repaint();
     }

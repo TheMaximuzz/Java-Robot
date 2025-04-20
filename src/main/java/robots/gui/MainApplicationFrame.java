@@ -1,8 +1,13 @@
 package robots.gui;
 
 import robots.log.Logger;
+import robots.profile.Profile;
+import robots.profile.ProfileManager;
+import robots.util.LocaleManager;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -11,19 +16,20 @@ public class MainApplicationFrame extends BaseFrame {
     private ApplicationMenuBar menuBar;
     private LogWindow logWindow;
     private GameWindow gameWindow;
+    private String currentProfileName;
 
-    public MainApplicationFrame() {
+    public MainApplicationFrame(String profileName) {
         super();
+        this.currentProfileName = profileName;
         Logger.appStarted();
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int inset = 50;
         int logWidth = 300;
         int blockSize = 32;
-        int mazeWidth = 28 * blockSize; // 896
-        int mazeHeight = 31 * blockSize; // 992
+        int mazeWidth = 28 * blockSize;
+        int mazeHeight = 31 * blockSize;
 
-        // Устанавливаем размеры главного окна
         int frameWidth = mazeWidth + logWidth + inset * 2;
         int frameHeight = Math.max(mazeHeight, 800) + inset * 2;
         setBounds(inset, inset, Math.min(frameWidth, screenSize.width - inset * 2),
@@ -66,10 +72,30 @@ public class MainApplicationFrame extends BaseFrame {
         return "mainWindowTitle";
     }
 
+    @Override
+    protected void onExit() {
+        exitApplication();
+    }
+
     public void exitApplication() {
-        if (confirmClose()) {
-            System.exit(0);
+        LocaleManager.saveLastLocale(Locale.getDefault());
+
+        List<Profile> profiles = ProfileManager.loadProfiles();
+        if (currentProfileName != null) {
+            int profileNumber = Integer.parseInt(currentProfileName.split("_")[1]);
+            profiles.removeIf(p -> p.getProfileNumber() == profileNumber);
+            Profile updatedProfile = new Profile(profileNumber, this, logWindow, gameWindow, Locale.getDefault());
+            profiles.add(updatedProfile);
+        } else {
+            int newProfileNumber = profiles.stream()
+                    .mapToInt(Profile::getProfileNumber)
+                    .max()
+                    .orElse(0) + 1;
+            Profile newProfile = new Profile(newProfileNumber, this, logWindow, gameWindow, Locale.getDefault());
+            profiles.add(newProfile);
         }
+        ProfileManager.saveProfiles(profiles);
+        System.exit(0);
     }
 
     public void changeLanguage(Locale locale) {
@@ -84,5 +110,13 @@ public class MainApplicationFrame extends BaseFrame {
         menuBar.updateLanguage(messages);
         logWindow.updateLanguage(messages);
         gameWindow.updateLanguage(messages);
+    }
+
+    public LogWindow getLogWindow() {
+        return logWindow;
+    }
+
+    public GameWindow getGameWindow() {
+        return gameWindow;
     }
 }
