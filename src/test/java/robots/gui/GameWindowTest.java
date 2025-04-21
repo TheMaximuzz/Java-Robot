@@ -1,7 +1,8 @@
 package robots.gui;
 
-import org.junit.jupiter.api.Test;
 import java.util.Locale;
+import org.junit.jupiter.api.Test;
+
 import java.util.ResourceBundle;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -9,13 +10,14 @@ public class GameWindowTest {
 
     @Test
     public void testGetTitleKey() {
-        GameWindow gameWindow = new GameWindow();
+        GameWindow gameWindow = new GameWindow(Locale.getDefault());
         assertEquals("gameWindowTitle", gameWindow.getTitleKey());
     }
 
     @Test
     public void testTitleLocalization() {
-        GameWindow gameWindow = new GameWindow();
+
+        GameWindow gameWindow = new GameWindow(Locale.getDefault());
         String key = gameWindow.getTitleKey();
 
         ResourceBundle enBundle = ResourceBundle.getBundle("messages", Locale.US);

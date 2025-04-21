@@ -6,16 +6,18 @@ import java.util.ResourceBundle;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MainApplicationFrameTest {
+    private String profileName;
 
     @Test
     public void testGetTitleKey() {
-        MainApplicationFrame frame = new MainApplicationFrame();
+        MainApplicationFrame frame = new MainApplicationFrame(profileName);
         assertEquals("mainWindowTitle", frame.getTitleKey());
     }
 
     @Test
     public void testTitleLocalization() {
-        MainApplicationFrame frame = new MainApplicationFrame();
+
+        MainApplicationFrame frame = new MainApplicationFrame(profileName);
         String key = frame.getTitleKey();
 
 

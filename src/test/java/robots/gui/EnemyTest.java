@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.Point;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,7 +14,7 @@ public class EnemyTest {
 
     @BeforeEach
     void setUp() {
-        gameVisualizer = new GameVisualizer();
+        gameVisualizer = new GameVisualizer(Locale.getDefault());
     }
 
     // 1

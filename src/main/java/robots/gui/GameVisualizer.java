@@ -6,6 +6,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.JPanel;
@@ -29,13 +32,20 @@ public class GameVisualizer extends JPanel {
     private Enemy.Mode currentMode = Enemy.Mode.CHASE;
     private static final long CHASE_DURATION = 15000;
     private static final long CALM_DURATION = 5000;
+    private ResourceBundle messages;
 
     private static Timer initTimer() {
         Timer timer = new Timer("events generator", true);
         return timer;
     }
 
-    public GameVisualizer() {
+    public GameVisualizer(Locale locale) {
+        try {
+            messages = ResourceBundle.getBundle("messages", locale);
+        } catch (MissingResourceException e) {
+            messages = null;
+            e.printStackTrace();
+        }
         mazeGenerator = new MazeGenerator(800, 600, 32);
         robotSize = mazeGenerator.getBlockSize() / 2;
         Point startPos = mazeGenerator.getRandomFreePosition();
@@ -170,7 +180,7 @@ public class GameVisualizer extends JPanel {
         onRedrawEvent();
     }
 
-    private void updatePlayer() {
+    protected void updatePlayer() {
         if (animationProgress < 1.0f) {
             animationProgress += animationSpeed;
             if (animationProgress >= 1.0f) {
@@ -261,7 +271,7 @@ public class GameVisualizer extends JPanel {
         if (gameOver) {
             Font gameOverFont = new Font("Arial", Font.BOLD, 36);
             g.setFont(gameOverFont);
-            String gameOverText = "GAME OVER! Нажмите ПРОБЕЛ, для рестарта.";
+            String gameOverText = messages.getString("gameOverMessage");
 
             FontMetrics metrics = g.getFontMetrics(gameOverFont);
             int textWidth = metrics.stringWidth(gameOverText);
@@ -327,6 +337,11 @@ public class GameVisualizer extends JPanel {
             enemy.setMode(currentMode);
             this.enemies.add(enemy);
         }
+        repaint();
+    }
+
+    public void updateLanguage(ResourceBundle newMessages) {
+        this.messages = newMessages;
         repaint();
     }
 }

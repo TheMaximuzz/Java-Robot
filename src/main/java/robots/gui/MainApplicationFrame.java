@@ -42,7 +42,7 @@ public class MainApplicationFrame extends BaseFrame {
         logWindow.setSize(logWidth, getHeight() - getInsets().top - getInsets().bottom);
         addWindow(logWindow);
 
-        gameWindow = new GameWindow();
+        gameWindow = new GameWindow(Locale.getDefault());
         gameWindow.setLocation(logWidth, 0);
         gameWindow.setSize(mazeWidth, mazeHeight);
         addWindow(gameWindow);

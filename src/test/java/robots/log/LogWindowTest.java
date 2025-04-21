@@ -1,7 +1,8 @@
-package robots.gui;
+package robots.log;
 
 import org.junit.jupiter.api.Test;
-import robots.log.Logger;
+import robots.gui.LogWindow;
+
 import java.util.Locale;
 import java.util.ResourceBundle;
 import static org.junit.jupiter.api.Assertions.*;

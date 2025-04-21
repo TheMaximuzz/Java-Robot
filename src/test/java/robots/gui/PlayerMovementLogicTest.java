@@ -8,6 +8,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.lang.reflect.Field;
+import java.util.Locale;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,7 +26,7 @@ class PlayerMovementLogicTest {
         when(mazeGenerator.getBlockSize()).thenReturn(blockSize);
         when(mazeGenerator.getRandomFreePosition()).thenReturn(new Point(32, 32));
         when(mazeGenerator.isCellFree(anyInt(), anyInt())).thenReturn(true);
-        gameVisualizer = new GameVisualizer();
+        gameVisualizer = new GameVisualizer(Locale.getDefault());
 
         Field mazeField = GameVisualizer.class.getDeclaredField("mazeGenerator");
         mazeField.setAccessible(true);

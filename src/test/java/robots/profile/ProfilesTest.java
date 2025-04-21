@@ -1,8 +1,11 @@
-package robots.gui;
+package robots.profile;
 
 import org.junit.jupiter.api.*;
-import robots.profile.Profile;
-import robots.profile.ProfileManager;
+import robots.gui.GameVisualizer;
+import robots.gui.GameWindow;
+import robots.gui.LogWindow;
+import robots.gui.MainApplicationFrame;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -47,7 +50,7 @@ public class ProfilesTest {
             logWindow.setBounds(200, 200, 300, 150);
             logWindow.setVisible(true);
 
-            gameWindow = new GameWindow();
+            gameWindow = new GameWindow(testLocale);
             gameWindow.setBounds(300, 300, 400, 200);
             gameWindow.setVisible(true);
 
@@ -122,7 +125,7 @@ public class ProfilesTest {
         // создаём новое игровое окно и восстанавливаем состояние
         AtomicReference<GameWindow> newGameWindow = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> {
-            newGameWindow.set(new GameWindow());
+            newGameWindow.set(new GameWindow(testLocale));
             newGameWindow.get().setPlayerPosition(loadedProfile.getPlayerX(), loadedProfile.getPlayerY());
             newGameWindow.get().setMobPositions(loadedProfile.getMobPositions());
         });

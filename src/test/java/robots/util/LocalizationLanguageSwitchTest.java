@@ -1,4 +1,4 @@
-package robots.gui;
+package robots.util;
 
 import org.junit.jupiter.api.Test;
 import java.util.Locale;

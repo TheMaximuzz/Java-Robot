@@ -6,14 +6,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class GameWindow extends BaseInternalFrame {
     private final GameVisualizer m_visualizer;
 
-    public GameWindow() {
+    public GameWindow(Locale locale) {
         super(true, true, true, true);
-        m_visualizer = new GameVisualizer();
+        m_visualizer = new GameVisualizer(locale);
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_visualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
@@ -35,6 +36,7 @@ public class GameWindow extends BaseInternalFrame {
     @Override
     public void updateLanguage(ResourceBundle newMessages) {
         super.updateLanguage(newMessages);
+        m_visualizer.updateLanguage(newMessages);
     }
 
     public int getPlayerX() {
