@@ -54,6 +54,7 @@ public class ProfilesTest {
             gameWindow.setBounds(300, 300, 400, 200);
             gameWindow.setVisible(true);
 
+
             GameVisualizer visualizer = (GameVisualizer) ((JPanel) gameWindow.getContentPane().getComponent(0)).getComponent(0);
             visualizer.setRobotPosition(5, 5);
             List<Profile.MobPosition> mobs = new ArrayList<>();
@@ -100,14 +101,15 @@ public class ProfilesTest {
         assertEquals(mainFrame.getX(), loadedProfile.getMainX());
         assertEquals(mainFrame.getY(), loadedProfile.getMainY());
         assertTrue(loadedProfile.isMainMaximized());
-        assertEquals(logWindow.getX(), loadedProfile.getLogX());
+        assertEquals(logWindow.getX(), loadedProfile.getLogNormalX());
         assertTrue(loadedProfile.isLogVisible());
-        assertEquals(gameWindow.getWidth(), loadedProfile.getGameWidth());
+        assertEquals(gameWindow.getWidth(), loadedProfile.getGameNormalWidth());
         assertEquals(5, loadedProfile.getPlayerX());
         assertEquals(5, loadedProfile.getPlayerY());
         assertEquals(2, loadedProfile.getMobPositions().size());
         assertEquals(10, loadedProfile.getMobPositions().get(0).getMobX());
-        assertEquals("ru_RU", loadedProfile.getLocale().toString());
+        assertEquals("ru", loadedProfile.getLocale().getLanguage());
+        assertEquals("RU", loadedProfile.getLocale().getCountry());
     }
 
 
@@ -189,7 +191,7 @@ public class ProfilesTest {
         assertFalse(loadedProfile2.isMainMaximized());
         assertFalse(loadedProfile2.isLogVisible());
         assertEquals(7, loadedProfile2.getPlayerX());
-        assertEquals(450, loadedProfile2.getGameWidth());
+        assertEquals(450, loadedProfile2.getGameNormalWidth());
     }
 
 
@@ -231,5 +233,55 @@ public class ProfilesTest {
         assertEquals(1000, loadedProfile2.getMainWidth());
         assertFalse(loadedProfile2.isLogVisible());
         assertEquals(8, loadedProfile2.getPlayerX());
+    }
+
+    // 5: Сохранение и загрузка максимизированного состояния окон
+    @Test
+    void testMaximizedStateSaveAndLoad() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
+            logWindow.setMaximized(true);
+            gameWindow.setMaximized(true);
+        });
+
+        Profile profile = new Profile(1, mainFrame, logWindow, gameWindow, testLocale);
+        List<Profile> profiles = new ArrayList<>();
+        profiles.add(profile);
+        ProfileManager.saveProfiles(profiles);
+
+        List<Profile> loadedProfiles = ProfileManager.loadProfiles();
+        assertEquals(1, loadedProfiles.size());
+        Profile loadedProfile = loadedProfiles.get(0);
+
+        assertTrue(loadedProfile.isMainMaximized());
+        assertTrue(loadedProfile.isLogMaximized());
+        assertTrue(loadedProfile.isGameMaximized());
+    }
+
+    // 6: Сохранение и загрузка свёрнутого состояния окон
+    @Test
+    void testIconifiedStateSaveAndLoad() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            mainFrame.setExtendedState(Frame.ICONIFIED);
+            try {
+                logWindow.setIcon(true);
+                gameWindow.setIcon(true);
+            } catch (Exception e) {
+                fail("Не получилось установить свёрнутое состояние окон: " + e.getMessage());
+            }
+        });
+
+        Profile profile = new Profile(1, mainFrame, logWindow, gameWindow, testLocale);
+        List<Profile> profiles = new ArrayList<>();
+        profiles.add(profile);
+        ProfileManager.saveProfiles(profiles);
+
+        List<Profile> loadedProfiles = ProfileManager.loadProfiles();
+        assertEquals(1, loadedProfiles.size());
+        Profile loadedProfile = loadedProfiles.get(0);
+
+        assertTrue(loadedProfile.isMainIconified());
+        assertTrue(loadedProfile.isLogIconified());
+        assertTrue(loadedProfile.isGameIconified());
     }
 }

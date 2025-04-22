@@ -30,12 +30,10 @@ public class RobotsProgram {
         RestoreConfirmationDialog restoreDialog = new RestoreConfirmationDialog(selectedLocale);
         restoreDialog.setVisible(true);
 
-        // если восстанавливаем профиль
         if (restoreDialog.isRestoreSelected()) {
           ProfileSelectionDialog profileDialog = new ProfileSelectionDialog(profiles, selectedLocale);
           profileDialog.setVisible(true);
 
-          // "играть"
           if (profileDialog.isPlaySelected()) {
             selectedProfileName = profileDialog.getSelectedProfileName();
             String profileNamePrefix = ResourceBundle.getBundle("messages", selectedLocale).getString("profileName");
@@ -62,50 +60,81 @@ public class RobotsProgram {
         }
       }
     } else {
-      // если профилей нет, мы сразу запускаем игру, соответственно впоследствии они появятся
       startGame = true;
     }
 
-    // запуск игры
     final Profile finalSelectedProfile = selectedProfile;
     final String finalProfileName = selectedProfileName;
-    if (startGame) {
-      SwingUtilities.invokeLater(() -> {
-        MainApplicationFrame frame = new MainApplicationFrame(finalProfileName);
+    SwingUtilities.invokeLater(() -> {
+      MainApplicationFrame frame = new MainApplicationFrame(finalProfileName);
 
-        // если выбрали профиль
-        if (finalSelectedProfile != null) {
-          frame.setBounds(finalSelectedProfile.getMainX(), finalSelectedProfile.getMainY(),
-                  finalSelectedProfile.getMainWidth(), finalSelectedProfile.getMainHeight());
-          if (finalSelectedProfile.isMainMaximized()) {
-            frame.setExtendedState(Frame.MAXIMIZED_BOTH);
-          }
-          frame.getLogWindow().setLocation(finalSelectedProfile.getLogX(), finalSelectedProfile.getLogY());
-          frame.getLogWindow().setSize(finalSelectedProfile.getLogWidth(), finalSelectedProfile.getLogHeight());
-          frame.getLogWindow().setVisible(finalSelectedProfile.isLogVisible());
-          try {
-            frame.getLogWindow().setMaximum(finalSelectedProfile.isLogMaximized());
-            frame.getLogWindow().setIcon(finalSelectedProfile.isLogIconified());
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-          frame.getGameWindow().setLocation(finalSelectedProfile.getGameX(), finalSelectedProfile.getGameY());
-          frame.getGameWindow().setSize(finalSelectedProfile.getGameWidth(), finalSelectedProfile.getGameHeight());
-          frame.getGameWindow().setVisible(finalSelectedProfile.isGameVisible());
-          try {
-            frame.getGameWindow().setMaximum(finalSelectedProfile.isGameMaximized());
-            frame.getGameWindow().setIcon(finalSelectedProfile.isGameIconified());
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-          frame.getGameWindow().setPlayerPosition(finalSelectedProfile.getPlayerX(), finalSelectedProfile.getPlayerY());
-          frame.getGameWindow().setMobPositions(finalSelectedProfile.getMobPositions());
-        } else {
-          frame.pack();
-          frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+      if (finalSelectedProfile != null) {
+        int mainWidth = finalSelectedProfile.getMainWidth() > 0 ? finalSelectedProfile.getMainWidth() : 1936;
+        int mainHeight = finalSelectedProfile.getMainHeight() > 0 ? finalSelectedProfile.getMainHeight() : 1056;
+        frame.setBounds(finalSelectedProfile.getMainX(), finalSelectedProfile.getMainY(), mainWidth, mainHeight);
+
+        int state = Frame.NORMAL;
+        if (finalSelectedProfile.isMainMaximized()) {
+          state |= Frame.MAXIMIZED_BOTH;
         }
-        frame.setVisible(true);
-      });
-    }
+        if (finalSelectedProfile.isMainIconified()) {
+          state |= Frame.ICONIFIED;
+        }
+        frame.setExtendedState(state);
+
+
+        LogWindow logWindow = frame.getLogWindow();
+        int logX = finalSelectedProfile.getLogNormalX();
+        int logY = finalSelectedProfile.getLogNormalY();
+        int logWidth = finalSelectedProfile.getLogNormalWidth() > 0 ? finalSelectedProfile.getLogNormalWidth() : 300;
+        int logHeight = finalSelectedProfile.getLogNormalHeight() > 0 ? finalSelectedProfile.getLogNormalHeight() : 200;
+        logWindow.setNormalBounds(new Rectangle(logX, logY, logWidth, logHeight));
+        logWindow.setBounds(logX, logY, logWidth, logHeight);
+        logWindow.setVisible(finalSelectedProfile.isLogVisible());
+
+        GameWindow gameWindow = frame.getGameWindow();
+        int gameX = finalSelectedProfile.getGameNormalX();
+        int gameY = finalSelectedProfile.getGameNormalY();
+        int gameWidth = finalSelectedProfile.getGameNormalWidth() > 0 ? finalSelectedProfile.getGameNormalWidth() : 896;
+        int gameHeight = finalSelectedProfile.getGameNormalHeight() > 0 ? finalSelectedProfile.getGameNormalHeight() : 672;
+        gameWindow.setNormalBounds(new Rectangle(gameX, gameY, gameWidth, gameHeight));
+        gameWindow.setBounds(gameX, gameY, gameWidth, gameHeight);
+        gameWindow.setVisible(finalSelectedProfile.isGameVisible());
+
+        SwingUtilities.invokeLater(() -> {
+          try {
+            if (finalSelectedProfile.isGameMaximized() && !finalSelectedProfile.isGameIconified()) {
+              gameWindow.setMaximized(true);
+              int maxX = finalSelectedProfile.getGameMaximizedX();
+              int maxY = finalSelectedProfile.getGameMaximizedY();
+              int maxWidth = finalSelectedProfile.getGameMaximizedWidth() > 0 ? finalSelectedProfile.getGameMaximizedWidth() : 1920;
+              int maxHeight = finalSelectedProfile.getGameMaximizedHeight() > 0 ? finalSelectedProfile.getGameMaximizedHeight() : 1080;
+              gameWindow.setBounds(maxX, maxY, maxWidth, maxHeight);
+            }
+            gameWindow.setIconified(finalSelectedProfile.isGameIconified());
+          } catch (Exception e) {
+            System.err.println(e.getMessage());
+          }
+
+          try {
+            if (finalSelectedProfile.isLogMaximized() && !finalSelectedProfile.isLogIconified()) {
+              logWindow.setMaximized(true);
+              int maxX = finalSelectedProfile.getLogMaximizedX();
+              int maxY = finalSelectedProfile.getLogMaximizedY();
+              int maxWidth = finalSelectedProfile.getLogMaximizedWidth() > 0 ? finalSelectedProfile.getLogMaximizedWidth() : 1920;
+              int maxHeight = finalSelectedProfile.getLogMaximizedHeight() > 0 ? finalSelectedProfile.getLogMaximizedHeight() : 1080;
+              logWindow.setBounds(maxX, maxY, maxWidth, maxHeight);
+            }
+            logWindow.setIconified(finalSelectedProfile.isLogIconified());
+          } catch (Exception e) {
+            System.err.println(e.getMessage());
+          }
+        });
+      } else {
+        frame.pack();
+        frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+      }
+      frame.setVisible(true);
+    });
   }
 }

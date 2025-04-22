@@ -4,7 +4,8 @@ import robots.log.Logger;
 import robots.profile.Profile;
 import robots.profile.ProfileManager;
 import robots.util.LocaleManager;
-
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
@@ -17,6 +18,7 @@ public class MainApplicationFrame extends BaseFrame {
     private LogWindow logWindow;
     private GameWindow gameWindow;
     private String currentProfileName;
+    private Profile currentProfile;
 
     public MainApplicationFrame(String profileName) {
         super();
@@ -28,7 +30,7 @@ public class MainApplicationFrame extends BaseFrame {
         int logWidth = 300;
         int blockSize = 32;
         int mazeWidth = 28 * blockSize;
-        int mazeHeight = 31 * blockSize;
+        int mazeHeight = 32 * blockSize;
 
         int frameWidth = mazeWidth + logWidth + inset * 2;
         int frameHeight = Math.max(mazeHeight, 800) + inset * 2;
@@ -40,15 +42,243 @@ public class MainApplicationFrame extends BaseFrame {
         logWindow = createLogWindow();
         logWindow.setLocation(0, 0);
         logWindow.setSize(logWidth, getHeight() - getInsets().top - getInsets().bottom);
+        logWindow.setNormalBounds(new Rectangle(0, 0, logWidth, getHeight() - getInsets().top - getInsets().bottom));
+        logWindow.setVisible(false);
         addWindow(logWindow);
+
+        logWindow.addPropertyChangeListener("maximum", evt -> {
+            if (Boolean.TRUE.equals(evt.getNewValue())) {
+                logWindow.moveToFront();
+            }
+        });
 
         gameWindow = new GameWindow(Locale.getDefault());
         gameWindow.setLocation(logWidth, 0);
         gameWindow.setSize(mazeWidth, mazeHeight);
+        gameWindow.setNormalBounds(new Rectangle(logWidth, 0, mazeWidth, mazeHeight));
+        gameWindow.setVisible(false);
         addWindow(gameWindow);
 
         menuBar = new ApplicationMenuBar(this);
         setJMenuBar(menuBar);
+
+        if (profileName != null) {
+            List<Profile> profiles = ProfileManager.loadProfiles();
+            int profileNumber = Integer.parseInt(profileName.split("_")[1]);
+            currentProfile = profiles.stream()
+                    .filter(p -> p.getProfileNumber() == profileNumber)
+                    .findFirst()
+                    .orElse(null);
+            if (currentProfile != null) {
+                applyProfile();
+            }
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            desktopPane.revalidate();
+            desktopPane.repaint();
+            logWindow.setVisible(currentProfile != null ? currentProfile.isLogVisible() : true);
+            gameWindow.setVisible(currentProfile != null ? currentProfile.isGameVisible() : true);
+        });
+
+        logWindow.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (!logWindow.isMaximum() && !logWindow.isIcon() && logWindow.getWidth() > 0 && logWindow.getHeight() > 0) {
+                    logWindow.setNormalBounds(new Rectangle(logWindow.getX(), logWindow.getY(), logWindow.getWidth(), logWindow.getHeight()));
+                    updateProfile();
+                }
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                if (!logWindow.isMaximum() && !logWindow.isIcon() && logWindow.getWidth() > 0 && logWindow.getHeight() > 0) {
+                    logWindow.setNormalBounds(new Rectangle(logWindow.getX(), logWindow.getY(), logWindow.getWidth(), logWindow.getHeight()));
+                    updateProfile();
+                }
+            }
+        });
+
+        logWindow.addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
+            @Override
+            public void internalFrameIconified(javax.swing.event.InternalFrameEvent e) {
+                updateProfile();
+            }
+
+            @Override
+            public void internalFrameDeiconified(javax.swing.event.InternalFrameEvent e) {
+                updateProfile();
+            }
+
+            @Override
+            public void internalFrameActivated(javax.swing.event.InternalFrameEvent e) {
+                if (logWindow.isMaximum()) {
+                    updateProfile();
+                }
+            }
+
+            @Override
+            public void internalFrameDeactivated(javax.swing.event.InternalFrameEvent e) {
+                updateProfile();
+            }
+        });
+
+        gameWindow.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (!gameWindow.isMaximum() && !gameWindow.isIcon() && gameWindow.getWidth() > 0 && gameWindow.getHeight() > 0) {
+                    gameWindow.setNormalBounds(new Rectangle(gameWindow.getX(), gameWindow.getY(), gameWindow.getWidth(), gameWindow.getHeight()));
+                    updateProfile();
+                }
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                if (!gameWindow.isMaximum() && !gameWindow.isIcon() && gameWindow.getWidth() > 0 && gameWindow.getHeight() > 0) {
+                    gameWindow.setNormalBounds(new Rectangle(gameWindow.getX(), gameWindow.getY(), gameWindow.getWidth(), gameWindow.getHeight()));
+                    updateProfile();
+                }
+            }
+        });
+
+        gameWindow.addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
+            @Override
+            public void internalFrameIconified(javax.swing.event.InternalFrameEvent e) {
+                updateProfile();
+            }
+
+            @Override
+            public void internalFrameDeiconified(javax.swing.event.InternalFrameEvent e) {
+                updateProfile();
+            }
+
+            @Override
+            public void internalFrameActivated(javax.swing.event.InternalFrameEvent e) {
+                if (gameWindow.isMaximum()) {
+                    updateProfile();
+                }
+            }
+
+            @Override
+            public void internalFrameDeactivated(javax.swing.event.InternalFrameEvent e) {
+                updateProfile();
+            }
+        });
+
+        // Синхронизация максимизации окон
+        logWindow.addPropertyChangeListener("maximum", evt -> {
+            if (Boolean.TRUE.equals(evt.getNewValue())) {
+                try {
+                    gameWindow.setMaximum(false);
+                    desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER + 1);
+                    desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER);
+                    updateProfile();
+                } catch (java.beans.PropertyVetoException e) {
+                    System.err.println(e.getMessage());
+                }
+            }
+        });
+
+        gameWindow.addPropertyChangeListener("maximum", evt -> {
+            if (Boolean.TRUE.equals(evt.getNewValue())) {
+                try {
+                    logWindow.setMaximum(false);
+                    desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER + 1);
+                    desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER);
+                    updateProfile();
+                } catch (java.beans.PropertyVetoException e) {
+                    System.err.println(e.getMessage());
+                }
+            }
+        });
+    }
+
+    private void applyProfile() {
+        if (currentProfile == null) return;
+        boolean logInFront = "log".equals(currentProfile.getFrontWindow());
+        try {
+            if (currentProfile.isLogIconified()) {
+                logWindow.setIcon(true);
+            } else if (currentProfile.isLogMaximized() && logInFront) {
+                logWindow.setMaximum(true);
+            } else {
+                logWindow.setMaximum(false);
+            }
+
+            // Затем границы в зависимости от состояния
+            if (currentProfile.isLogMaximized() && !currentProfile.isLogIconified() && logInFront) {
+                logWindow.setBounds(
+                        currentProfile.getLogMaximizedX(),
+                        currentProfile.getLogMaximizedY(),
+                        currentProfile.getLogMaximizedWidth(),
+                        currentProfile.getLogMaximizedHeight()
+                );
+            } else if (!currentProfile.isLogIconified()) {
+                logWindow.setBounds(
+                        currentProfile.getLogNormalX(),
+                        currentProfile.getLogNormalY(),
+                        currentProfile.getLogNormalWidth(),
+                        currentProfile.getLogNormalHeight()
+                );
+                logWindow.setNormalBounds(new Rectangle(
+                        currentProfile.getLogNormalX(),
+                        currentProfile.getLogNormalY(),
+                        currentProfile.getLogNormalWidth(),
+                        currentProfile.getLogNormalHeight()
+                ));
+            }
+        } catch (java.beans.PropertyVetoException e) {
+            System.err.println(e.getMessage());
+        }
+
+        try {
+            if (currentProfile.isGameIconified()) {
+                gameWindow.setIcon(true);
+            } else if (currentProfile.isGameMaximized() && !logInFront) {
+                gameWindow.setMaximum(true);
+            } else {
+                gameWindow.setMaximum(false);
+            }
+
+            if (currentProfile.isGameMaximized() && !currentProfile.isGameIconified() && !logInFront) {
+                gameWindow.setBounds(
+                        currentProfile.getGameMaximizedX(),
+                        currentProfile.getGameMaximizedY(),
+                        currentProfile.getGameMaximizedWidth(),
+                        currentProfile.getGameMaximizedHeight()
+                );
+            } else if (!currentProfile.isGameIconified()) {
+                gameWindow.setBounds(
+                        currentProfile.getGameNormalX(),
+                        currentProfile.getGameNormalY(),
+                        currentProfile.getGameNormalWidth(),
+                        currentProfile.getGameNormalHeight()
+                );
+                gameWindow.setNormalBounds(new Rectangle(
+                        currentProfile.getGameNormalX(),
+                        currentProfile.getGameNormalY(),
+                        currentProfile.getGameNormalWidth(),
+                        currentProfile.getGameNormalHeight()
+                ));
+            }
+        } catch (java.beans.PropertyVetoException e) {
+            System.err.println(e.getMessage());
+        }
+
+        if (logInFront) {
+            desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER + 1);
+            desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER);
+        } else {
+            desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER + 1);
+            desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER);
+        }
+    }
+
+
+    private void updateProfile() {
+        if (currentProfile != null) {
+            currentProfile.updateFromWindows(this, logWindow, gameWindow, Locale.getDefault());
+        }
     }
 
     protected LogWindow createLogWindow() {
@@ -59,7 +289,6 @@ public class MainApplicationFrame extends BaseFrame {
 
     protected void addWindow(JInternalFrame frame) {
         desktopPane.add(frame);
-        frame.setVisible(true);
     }
 
     @Override
@@ -84,15 +313,15 @@ public class MainApplicationFrame extends BaseFrame {
         if (currentProfileName != null) {
             int profileNumber = Integer.parseInt(currentProfileName.split("_")[1]);
             profiles.removeIf(p -> p.getProfileNumber() == profileNumber);
-            Profile updatedProfile = new Profile(profileNumber, this, logWindow, gameWindow, Locale.getDefault());
-            profiles.add(updatedProfile);
+            currentProfile = new Profile(profileNumber, this, logWindow, gameWindow, Locale.getDefault());
+            profiles.add(currentProfile);
         } else {
             int newProfileNumber = profiles.stream()
                     .mapToInt(Profile::getProfileNumber)
                     .max()
                     .orElse(0) + 1;
-            Profile newProfile = new Profile(newProfileNumber, this, logWindow, gameWindow, Locale.getDefault());
-            profiles.add(newProfile);
+            currentProfile = new Profile(newProfileNumber, this, logWindow, gameWindow, Locale.getDefault());
+            profiles.add(currentProfile);
         }
         ProfileManager.saveProfiles(profiles);
         System.exit(0);
@@ -108,8 +337,8 @@ public class MainApplicationFrame extends BaseFrame {
     private void updateUI() {
         super.updateLanguage(messages);
         menuBar.updateLanguage(messages);
-        logWindow.updateLanguage(messages);
-        gameWindow.updateLanguage(messages);
+        logWindow.updateLanguageIfVisible(messages);
+        gameWindow.updateLanguageIfVisible(messages);
     }
 
     public LogWindow getLogWindow() {

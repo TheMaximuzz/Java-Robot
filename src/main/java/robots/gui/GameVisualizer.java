@@ -106,6 +106,13 @@ public class GameVisualizer extends JPanel {
                 }
             }
         });
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                setFocusable(true);
+                requestFocusInWindow();
+            }
+        });
 
         setDoubleBuffered(true);
         setBackground(Color.BLACK);
@@ -143,7 +150,7 @@ public class GameVisualizer extends JPanel {
             enemy.setMode(currentMode);
         }
         scheduleNextPhase();
-        requestFocusInWindow();
+        //requestFocusInWindow();
     }
 
     private void scheduleNextPhase() {

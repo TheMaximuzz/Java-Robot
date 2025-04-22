@@ -10,7 +10,6 @@ public class ApplicationMenuBar extends JMenuBar {
     private final MainApplicationFrame parentFrame;
     private ResourceBundle messages;
 
-    //текующий язык системы
     public ApplicationMenuBar(MainApplicationFrame parentFrame) {
         this.parentFrame = parentFrame;
         messages = ResourceBundle.getBundle("messages", Locale.getDefault());

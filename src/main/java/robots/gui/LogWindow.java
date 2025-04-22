@@ -54,7 +54,7 @@ public class LogWindow extends BaseInternalFrame implements LogChangeListener {
     }
 
     @Override
-    public String getTitleKey() {
+    protected String getTitleKey() {
         return "logWindowTitle"; // Ключ для заголовка окна логов
     }
 
