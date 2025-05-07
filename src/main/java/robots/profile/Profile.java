@@ -71,6 +71,12 @@ public class Profile implements Serializable {
     @JsonProperty("logIconified")
     private boolean logIconified;
 
+    @JsonProperty("logPendingMaximize")
+    private boolean logPendingMaximize;
+
+    @JsonProperty("logWasMaximizedBeforeIconify")
+    private boolean logWasMaximizedBeforeIconify;
+
     @JsonProperty("gameNormalX")
     private int gameNormalX;
 
@@ -104,6 +110,12 @@ public class Profile implements Serializable {
     @JsonProperty("gameIconified")
     private boolean gameIconified;
 
+    @JsonProperty("gamePendingMaximize")
+    private boolean gamePendingMaximize;
+
+    @JsonProperty("gameWasMaximizedBeforeIconify")
+    private boolean gameWasMaximizedBeforeIconify;
+
     @JsonProperty("playerX")
     private int playerX;
 
@@ -134,6 +146,8 @@ public class Profile implements Serializable {
         this.logVisible = true;
         this.gameVisible = true;
         this.frontWindow = "game";
+        this.logWasMaximizedBeforeIconify = false;
+        this.gameWasMaximizedBeforeIconify = false;
     }
 
     public Profile(int profileNumber, MainApplicationFrame mainFrame, LogWindow logWindow, GameWindow gameWindow, Locale locale) {
@@ -142,7 +156,6 @@ public class Profile implements Serializable {
     }
 
     public void updateFromWindows(MainApplicationFrame mainFrame, LogWindow logWindow, GameWindow gameWindow, Locale locale) {
-
         this.mainX = mainFrame.getX();
         this.mainY = mainFrame.getY();
         this.mainWidth = mainFrame.getWidth() > 0 ? mainFrame.getWidth() : 1936;
@@ -154,7 +167,12 @@ public class Profile implements Serializable {
             this.logMaximized = logWindow.isMaximum();
             this.logIconified = logWindow.isIcon();
             this.logVisible = logWindow.isVisible();
-
+            if (this.logMaximized) {
+                this.logWasMaximizedBeforeIconify = true;
+            } else if (!this.logIconified) {
+                this.logWasMaximizedBeforeIconify = false;
+            }
+            this.logPendingMaximize = this.logMaximized || (this.logIconified && this.logWasMaximizedBeforeIconify);
             Rectangle logNormalBounds = logWindow.getNormalBounds();
             if (logNormalBounds != null && logNormalBounds.width > 0 && logNormalBounds.height > 0) {
                 this.logNormalX = logNormalBounds.x;
@@ -173,18 +191,28 @@ public class Profile implements Serializable {
                 this.logMaximizedY = logWindow.getY();
                 this.logMaximizedWidth = logWindow.getWidth();
                 this.logMaximizedHeight = logWindow.getHeight();
+                if (this.logMaximizedWidth <= 0 || this.logMaximizedHeight <= 0) {
+                    this.logMaximizedWidth = 1920;
+                    this.logMaximizedHeight = 1080;
+                }
             }
         } catch (Exception e) {
             this.logMaximized = false;
             this.logIconified = false;
-            System.err.println(e.getMessage());
+            this.logPendingMaximize = false;
+            this.logWasMaximizedBeforeIconify = false;
         }
 
         try {
             this.gameMaximized = gameWindow.isMaximum();
             this.gameIconified = gameWindow.isIcon();
-            this.gameVisible = logWindow.isVisible();
-
+            this.gameVisible = gameWindow.isVisible();
+            if (this.gameMaximized) {
+                this.gameWasMaximizedBeforeIconify = true;
+            } else if (!this.gameIconified) {
+                this.gameWasMaximizedBeforeIconify = false;
+            }
+            this.gamePendingMaximize = this.gameMaximized || (this.gameIconified && this.gameWasMaximizedBeforeIconify);
             Rectangle gameNormalBounds = gameWindow.getNormalBounds();
             if (gameNormalBounds != null && gameNormalBounds.width > 0 && gameNormalBounds.height > 0) {
                 this.gameNormalX = gameNormalBounds.x;
@@ -203,11 +231,16 @@ public class Profile implements Serializable {
                 this.gameMaximizedY = gameWindow.getY();
                 this.gameMaximizedWidth = gameWindow.getWidth();
                 this.gameMaximizedHeight = gameWindow.getHeight();
+                if (this.gameMaximizedWidth <= 0 || this.gameMaximizedHeight <= 0) {
+                    this.gameMaximizedWidth = 1920;
+                    this.gameMaximizedHeight = 1080;
+                }
             }
         } catch (Exception e) {
             this.gameMaximized = false;
             this.gameIconified = false;
-            System.err.println(e.getMessage());
+            this.gamePendingMaximize = false;
+            this.gameWasMaximizedBeforeIconify = false;
         }
 
         this.playerX = gameWindow.getPlayerX();
@@ -259,6 +292,9 @@ public class Profile implements Serializable {
     public boolean isLogVisible() { return logVisible; }
     public boolean isLogMaximized() { return logMaximized; }
     public boolean isLogIconified() { return logIconified; }
+    public boolean isLogPendingMaximize() { return logPendingMaximize; }
+    public boolean wasLogMaximizedBeforeIconify() { return logWasMaximizedBeforeIconify; }
+    public boolean shouldLogMaximizeOnDeiconify() { return logIconified && logWasMaximizedBeforeIconify; }
     public int getGameNormalX() { return gameNormalX; }
     public int getGameNormalY() { return gameNormalY; }
     public int getGameNormalWidth() { return gameNormalWidth; }
@@ -270,6 +306,9 @@ public class Profile implements Serializable {
     public boolean isGameVisible() { return gameVisible; }
     public boolean isGameMaximized() { return gameMaximized; }
     public boolean isGameIconified() { return gameIconified; }
+    public boolean isGamePendingMaximize() { return gamePendingMaximize; }
+    public boolean wasGameMaximizedBeforeIconify() { return gameWasMaximizedBeforeIconify; }
+    public boolean shouldGameMaximizeOnDeiconify() { return gameIconified && gameWasMaximizedBeforeIconify; }
     public int getPlayerX() { return playerX; }
     public int getPlayerY() { return playerY; }
     public List<MobPosition> getMobPositions() { return mobs; }
@@ -279,6 +318,42 @@ public class Profile implements Serializable {
             locale = parts.length == 2 ? new Locale(parts[0], parts[1]) : new Locale(parts[0]);
         }
         return locale;
+    }
+
+    public String getWindowStateSummary(String window) {
+        StringBuilder summary = new StringBuilder();
+        if ("log".equalsIgnoreCase(window)) {
+            summary.append("LogWindow: ")
+                    .append("visible=").append(logVisible)
+                    .append(", maximized=").append(logMaximized)
+                    .append(", iconified=").append(logIconified)
+                    .append(", pendingMaximize=").append(logPendingMaximize)
+                    .append(", wasMaximizedBeforeIconify=").append(logWasMaximizedBeforeIconify)
+                    .append(", normalBounds=[x=").append(logNormalX)
+                    .append(",y=").append(logNormalY)
+                    .append(",width=").append(logNormalWidth)
+                    .append(",height=").append(logNormalHeight).append("]")
+                    .append(", maximizedBounds=[x=").append(logMaximizedX)
+                    .append(",y=").append(logMaximizedY)
+                    .append(",width=").append(logMaximizedWidth)
+                    .append(",height=").append(logMaximizedHeight).append("]");
+        } else if ("game".equalsIgnoreCase(window)) {
+            summary.append("GameWindow: ")
+                    .append("visible=").append(gameVisible)
+                    .append(", maximized=").append(gameMaximized)
+                    .append(", iconified=").append(gameIconified)
+                    .append(", pendingMaximize=").append(gamePendingMaximize)
+                    .append(", wasMaximizedBeforeIconify=").append(gameWasMaximizedBeforeIconify)
+                    .append(", normalBounds=[x=").append(gameNormalX)
+                    .append(",y=").append(gameNormalY)
+                    .append(",width=").append(gameNormalWidth)
+                    .append(",height=").append(gameNormalHeight).append("]")
+                    .append(", maximizedBounds=[x=").append(gameMaximizedX)
+                    .append(",y=").append(gameMaximizedY)
+                    .append(",width=").append(gameMaximizedWidth)
+                    .append(",height=").append(gameMaximizedHeight).append("]");
+        }
+        return summary.toString();
     }
 
     public static class MobPosition {

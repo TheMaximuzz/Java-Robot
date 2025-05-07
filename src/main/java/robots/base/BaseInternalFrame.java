@@ -1,4 +1,4 @@
-package robots.gui;
+package robots.base;
 
 import robots.util.ConfirmCloseHelper;
 import javax.swing.*;
@@ -50,22 +50,18 @@ public abstract class BaseInternalFrame extends JInternalFrame {
     }
 
     public void setMaximized(boolean maximized) {
-        System.out.println("Setting maximized state for " + getTitle() + ": " + maximized);
         try {
-            // Сохраняем нормальные размеры перед максимизацией
+            System.out.println(getTitle() + ": Setting maximized=" + maximized + ", current state: icon=" + isIcon() + ", max=" + isMaximum());
             if (!isMaximum() && !isIcon() && getWidth() > 0 && getHeight() > 0) {
                 setNormalBounds(new Rectangle(getX(), getY(), getWidth(), getHeight()));
-                System.out.println("Saved normal bounds before maximize: x=" + getX() + ", y=" + getY() +
-                        ", width=" + getWidth() + ", height=" + getHeight());
+                System.out.println(getTitle() + ": Saved normalBounds=" + getNormalBounds());
             }
             setMaximum(maximized);
             if (!maximized) {
-                // Восстанавливаем нормальные размеры
                 Rectangle normalBounds = getNormalBounds();
                 if (normalBounds != null && normalBounds.width > 0 && normalBounds.height > 0) {
                     setBounds(normalBounds);
-                    System.out.println("Restored normal bounds after unmaximize: x=" + normalBounds.x +
-                            ", y=" + normalBounds.y + ", width=" + normalBounds.width + ", height=" + normalBounds.height);
+                    System.out.println(getTitle() + ": Restored normalBounds=" + normalBounds);
                 }
             }
             setVisible(true);
@@ -75,27 +71,23 @@ public abstract class BaseInternalFrame extends JInternalFrame {
             repaint();
             updateDesktopPane();
         } catch (Exception e) {
-            System.err.println("Error setting maximized state for " + getTitle() + ": " + e.getMessage());
+            System.err.println(getTitle() + ": Error setting maximized: " + e.getMessage());
         }
     }
 
     public void setIconified(boolean iconified) {
-        System.out.println("Setting iconified state for " + getTitle() + ": " + iconified);
         try {
-            // Сохраняем нормальные размеры перед иконификацией
+            System.out.println(getTitle() + ": Setting iconified=" + iconified + ", current state: icon=" + isIcon() + ", max=" + isMaximum());
             if (!isIcon() && !isMaximum() && getWidth() > 0 && getHeight() > 0) {
                 setNormalBounds(new Rectangle(getX(), getY(), getWidth(), getHeight()));
-                System.out.println("Saved normal bounds before iconify: x=" + getX() + ", y=" + getY() +
-                        ", width=" + getWidth() + ", height=" + getHeight());
+                System.out.println(getTitle() + ": Saved normalBounds=" + getNormalBounds());
             }
             setIcon(iconified);
             if (!iconified) {
-                // Восстанавливаем нормальные размеры
                 Rectangle normalBounds = getNormalBounds();
                 if (normalBounds != null && normalBounds.width > 0 && normalBounds.height > 0) {
                     setBounds(normalBounds);
-                    System.out.println("Restored normal bounds after deiconify: x=" + normalBounds.x +
-                            ", y=" + normalBounds.y + ", width=" + normalBounds.width + ", height=" + normalBounds.height);
+                    System.out.println(getTitle() + ": Restored normalBounds=" + normalBounds);
                 }
                 setVisible(true);
                 toFront();
@@ -105,7 +97,26 @@ public abstract class BaseInternalFrame extends JInternalFrame {
             repaint();
             updateDesktopPane();
         } catch (Exception e) {
-            System.err.println("Error setting iconified state for " + getTitle() + ": " + e.getMessage());
+            System.err.println(getTitle() + ": Error setting iconified: " + e.getMessage());
+        }
+    }
+
+    public void restoreMaximizedState(int x, int y, int width, int height) {
+        try {
+            System.out.println(getTitle() + ": Restoring maximized state, bounds=[x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + "]");
+            if (isIcon()) {
+                setIconified(false);
+            }
+            setMaximized(true);
+            setBounds(x, y, width, height);
+            setVisible(true);
+            toFront();
+            requestFocus();
+            revalidate();
+            repaint();
+            updateDesktopPane();
+        } catch (Exception e) {
+            System.err.println(getTitle() + ": Error restoring maximized state: " + e.getMessage());
         }
     }
 
@@ -113,7 +124,7 @@ public abstract class BaseInternalFrame extends JInternalFrame {
         try {
             return super.isIcon();
         } catch (Exception e) {
-            System.err.println("Error checking icon state for " + getTitle() + ": " + e.getMessage());
+            System.err.println(getTitle() + ": Error checking iconified: " + e.getMessage());
             return false;
         }
     }
@@ -122,7 +133,7 @@ public abstract class BaseInternalFrame extends JInternalFrame {
         try {
             return super.isMaximum();
         } catch (Exception e) {
-            System.err.println("Error checking maximum state for " + getTitle() + ": " + e.getMessage());
+            System.err.println(getTitle() + ": Error checking maximized: " + e.getMessage());
             return false;
         }
     }
@@ -140,7 +151,6 @@ public abstract class BaseInternalFrame extends JInternalFrame {
             JDesktopPane desktopPane = (JDesktopPane) getParent();
             desktopPane.revalidate();
             desktopPane.repaint();
-            System.out.println("Updated JDesktopPane for " + getTitle());
         }
     }
 }

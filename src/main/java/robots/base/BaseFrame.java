@@ -1,4 +1,4 @@
-package robots.gui;
+package robots.base;
 
 import robots.util.ConfirmCloseHelper;
 import javax.swing.*;

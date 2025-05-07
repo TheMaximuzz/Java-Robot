@@ -1,5 +1,6 @@
 package robots.gui;
 
+import robots.base.BaseInternalFrame;
 import robots.profile.Profile;
 
 import javax.swing.*;

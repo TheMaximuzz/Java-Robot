@@ -1,5 +1,6 @@
 package robots.gui;
 
+import robots.base.BaseFrame;
 import robots.log.Logger;
 import robots.profile.Profile;
 import robots.profile.ProfileManager;
@@ -49,6 +50,9 @@ public class MainApplicationFrame extends BaseFrame {
         logWindow.addPropertyChangeListener("maximum", evt -> {
             if (Boolean.TRUE.equals(evt.getNewValue())) {
                 logWindow.moveToFront();
+                desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER + 1);
+                desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER);
+                updateProfile();
             }
         });
 
@@ -58,6 +62,15 @@ public class MainApplicationFrame extends BaseFrame {
         gameWindow.setNormalBounds(new Rectangle(logWidth, 0, mazeWidth, mazeHeight));
         gameWindow.setVisible(false);
         addWindow(gameWindow);
+
+        gameWindow.addPropertyChangeListener("maximum", evt -> {
+            if (Boolean.TRUE.equals(evt.getNewValue())) {
+                gameWindow.moveToFront();
+                desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER + 1);
+                desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER);
+                updateProfile();
+            }
+        });
 
         menuBar = new ApplicationMenuBar(this);
         setJMenuBar(menuBar);
@@ -107,6 +120,20 @@ public class MainApplicationFrame extends BaseFrame {
 
             @Override
             public void internalFrameDeiconified(javax.swing.event.InternalFrameEvent e) {
+                if (currentProfile != null && currentProfile.shouldLogMaximizeOnDeiconify()) {
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            logWindow.restoreMaximizedState(
+                                    currentProfile.getLogMaximizedX(),
+                                    currentProfile.getLogMaximizedY(),
+                                    currentProfile.getLogMaximizedWidth(),
+                                    currentProfile.getLogMaximizedHeight()
+                            );
+                        } catch (Exception ex) {
+                            System.err.println("LogWindow - Ошибка: " + ex.getMessage());
+                        }
+                    });
+                }
                 updateProfile();
             }
 
@@ -119,7 +146,7 @@ public class MainApplicationFrame extends BaseFrame {
 
             @Override
             public void internalFrameDeactivated(javax.swing.event.InternalFrameEvent e) {
-                updateProfile();
+                // Убрали updateProfile
             }
         });
 
@@ -149,6 +176,20 @@ public class MainApplicationFrame extends BaseFrame {
 
             @Override
             public void internalFrameDeiconified(javax.swing.event.InternalFrameEvent e) {
+                if (currentProfile != null && currentProfile.shouldGameMaximizeOnDeiconify()) {
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            gameWindow.restoreMaximizedState(
+                                    currentProfile.getGameMaximizedX(),
+                                    currentProfile.getGameMaximizedY(),
+                                    currentProfile.getGameMaximizedWidth(),
+                                    currentProfile.getGameMaximizedHeight()
+                            );
+                        } catch (Exception ex) {
+                            System.err.println("GameWindow - Ошибка: " + ex.getMessage());
+                        }
+                    });
+                }
                 updateProfile();
             }
 
@@ -161,34 +202,7 @@ public class MainApplicationFrame extends BaseFrame {
 
             @Override
             public void internalFrameDeactivated(javax.swing.event.InternalFrameEvent e) {
-                updateProfile();
-            }
-        });
-
-        // Синхронизация максимизации окон
-        logWindow.addPropertyChangeListener("maximum", evt -> {
-            if (Boolean.TRUE.equals(evt.getNewValue())) {
-                try {
-                    gameWindow.setMaximum(false);
-                    desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER + 1);
-                    desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER);
-                    updateProfile();
-                } catch (java.beans.PropertyVetoException e) {
-                    System.err.println(e.getMessage());
-                }
-            }
-        });
-
-        gameWindow.addPropertyChangeListener("maximum", evt -> {
-            if (Boolean.TRUE.equals(evt.getNewValue())) {
-                try {
-                    logWindow.setMaximum(false);
-                    desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER + 1);
-                    desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER);
-                    updateProfile();
-                } catch (java.beans.PropertyVetoException e) {
-                    System.err.println(e.getMessage());
-                }
+                // Убрали updateProfile
             }
         });
     }
@@ -197,72 +211,68 @@ public class MainApplicationFrame extends BaseFrame {
         if (currentProfile == null) return;
         boolean logInFront = "log".equals(currentProfile.getFrontWindow());
         try {
-            if (currentProfile.isLogIconified()) {
-                logWindow.setIcon(true);
-            } else if (currentProfile.isLogMaximized() && logInFront) {
-                logWindow.setMaximum(true);
-            } else {
-                logWindow.setMaximum(false);
+            // Установка LogWindow
+            logWindow.setNormalBounds(new Rectangle(
+                    currentProfile.getLogNormalX(),
+                    currentProfile.getLogNormalY(),
+                    currentProfile.getLogNormalWidth(),
+                    currentProfile.getLogNormalHeight()
+            ));
+            if (!currentProfile.isLogIconified()) {
+                if (currentProfile.isLogMaximized()) {
+                    logWindow.restoreMaximizedState(
+                            currentProfile.getLogMaximizedX(),
+                            currentProfile.getLogMaximizedY(),
+                            currentProfile.getLogMaximizedWidth(),
+                            currentProfile.getLogMaximizedHeight()
+                    );
+                } else {
+                    logWindow.setMaximized(false);
+                    logWindow.setBounds(
+                            currentProfile.getLogNormalX(),
+                            currentProfile.getLogNormalY(),
+                            currentProfile.getLogNormalWidth(),
+                            currentProfile.getLogNormalHeight()
+                    );
+                }
             }
 
-            // Затем границы в зависимости от состояния
-            if (currentProfile.isLogMaximized() && !currentProfile.isLogIconified() && logInFront) {
-                logWindow.setBounds(
-                        currentProfile.getLogMaximizedX(),
-                        currentProfile.getLogMaximizedY(),
-                        currentProfile.getLogMaximizedWidth(),
-                        currentProfile.getLogMaximizedHeight()
-                );
-            } else if (!currentProfile.isLogIconified()) {
-                logWindow.setBounds(
-                        currentProfile.getLogNormalX(),
-                        currentProfile.getLogNormalY(),
-                        currentProfile.getLogNormalWidth(),
-                        currentProfile.getLogNormalHeight()
-                );
-                logWindow.setNormalBounds(new Rectangle(
-                        currentProfile.getLogNormalX(),
-                        currentProfile.getLogNormalY(),
-                        currentProfile.getLogNormalWidth(),
-                        currentProfile.getLogNormalHeight()
-                ));
-            }
-        } catch (java.beans.PropertyVetoException e) {
-            System.err.println(e.getMessage());
+            logWindow.setVisible(currentProfile.isLogVisible());
+            logWindow.setIconified(currentProfile.isLogIconified());
+        } catch (Exception e) {
+            System.err.println("LogWindow - Ошибка в applyProfile(): " + e.getMessage());
         }
 
         try {
-            if (currentProfile.isGameIconified()) {
-                gameWindow.setIcon(true);
-            } else if (currentProfile.isGameMaximized() && !logInFront) {
-                gameWindow.setMaximum(true);
-            } else {
-                gameWindow.setMaximum(false);
+            gameWindow.setNormalBounds(new Rectangle(
+                    currentProfile.getGameNormalX(),
+                    currentProfile.getGameNormalY(),
+                    currentProfile.getGameNormalWidth(),
+                    currentProfile.getGameNormalHeight()
+            ));
+            if (!currentProfile.isGameIconified()) {
+                if (currentProfile.isGameMaximized()) {
+                    gameWindow.restoreMaximizedState(
+                            currentProfile.getGameMaximizedX(),
+                            currentProfile.getGameMaximizedY(),
+                            currentProfile.getGameMaximizedWidth(),
+                            currentProfile.getGameMaximizedHeight()
+                    );
+                } else {
+                    gameWindow.setMaximized(false);
+                    gameWindow.setBounds(
+                            currentProfile.getGameNormalX(),
+                            currentProfile.getGameNormalY(),
+                            currentProfile.getGameNormalWidth(),
+                            currentProfile.getGameNormalHeight()
+                    );
+                }
             }
 
-            if (currentProfile.isGameMaximized() && !currentProfile.isGameIconified() && !logInFront) {
-                gameWindow.setBounds(
-                        currentProfile.getGameMaximizedX(),
-                        currentProfile.getGameMaximizedY(),
-                        currentProfile.getGameMaximizedWidth(),
-                        currentProfile.getGameMaximizedHeight()
-                );
-            } else if (!currentProfile.isGameIconified()) {
-                gameWindow.setBounds(
-                        currentProfile.getGameNormalX(),
-                        currentProfile.getGameNormalY(),
-                        currentProfile.getGameNormalWidth(),
-                        currentProfile.getGameNormalHeight()
-                );
-                gameWindow.setNormalBounds(new Rectangle(
-                        currentProfile.getGameNormalX(),
-                        currentProfile.getGameNormalY(),
-                        currentProfile.getGameNormalWidth(),
-                        currentProfile.getGameNormalHeight()
-                ));
-            }
-        } catch (java.beans.PropertyVetoException e) {
-            System.err.println(e.getMessage());
+            gameWindow.setVisible(currentProfile.isGameVisible());
+            gameWindow.setIconified(currentProfile.isGameIconified());
+        } catch (Exception e) {
+            System.err.println("GameWindow - Ошибка в applyProfile(): " + e.getMessage());
         }
 
         if (logInFront) {
@@ -272,8 +282,10 @@ public class MainApplicationFrame extends BaseFrame {
             desktopPane.setLayer(gameWindow, JDesktopPane.DEFAULT_LAYER + 1);
             desktopPane.setLayer(logWindow, JDesktopPane.DEFAULT_LAYER);
         }
-    }
 
+        gameWindow.setPlayerPosition(currentProfile.getPlayerX(), currentProfile.getPlayerY());
+        gameWindow.setMobPositions(currentProfile.getMobPositions());
+    }
 
     private void updateProfile() {
         if (currentProfile != null) {

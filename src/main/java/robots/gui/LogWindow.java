@@ -1,5 +1,6 @@
 package robots.gui;
 
+import robots.base.BaseInternalFrame;
 import robots.log.LogChangeListener;
 import robots.log.LogEntry;
 import robots.log.LogWindowSource;
