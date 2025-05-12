@@ -1,8 +1,15 @@
 package robots.gui;
 
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 public class Enemy {
     private int gridX;
@@ -19,7 +26,7 @@ public class Enemy {
     private long randomPhaseEndTime;
     private static final int CENTER_X = 14;
     private static final int CENTER_Y = 15;
-    private final List<Enemy> allEnemies; // Reference to all enemies
+    private final List<Enemy> allEnemies;
 
     public enum Mode {
         CHASE,
@@ -35,7 +42,7 @@ public class Enemy {
         this.size = size;
         this.pathToPlayer = new ArrayList<>();
         this.randomPhaseEndTime = System.currentTimeMillis() + 2000 + (int)(Math.random() * 1000);
-        this.allEnemies = allEnemies; // Initialize the list of all enemies
+        this.allEnemies = allEnemies;
     }
 
     public void setMode(Mode newMode) {
@@ -53,6 +60,14 @@ public class Enemy {
                 animationProgress = 1.0f;
                 gridX = targetGridX;
                 gridY = targetGridY;
+                // Проверка на портале и телепортация
+                if (mazeGenerator.isPortal(gridX, gridY)) {
+                    Point otherPortal = mazeGenerator.getOtherPortal(gridX, gridY);
+                    gridX = otherPortal.x;
+                    gridY = otherPortal.y;
+                    targetGridX = gridX;
+                    targetGridY = gridY;
+                }
             }
             return;
         }
@@ -77,7 +92,6 @@ public class Enemy {
     private boolean isPositionFree(int x, int y) {
         for (Enemy other : allEnemies) {
             if (other != this) {
-                // Check if another enemy is at the target position or moving there
                 if ((other.gridX == x && other.gridY == y) ||
                         (other.targetGridX == x && other.targetGridY == y && other.animationProgress < 1.0f)) {
                     return false;

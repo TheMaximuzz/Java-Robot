@@ -123,7 +123,7 @@ public class GameVisualizer extends JPanel {
         int centerX = 14;
         int centerY = 15;
 
-        enemies.clear(); // Ensure the list is empty before adding new enemies
+        enemies.clear();
         for (int i = 0; i < 3; i++) {
             int gridX, gridY;
             switch (i) {
@@ -132,12 +132,9 @@ public class GameVisualizer extends JPanel {
                 case 2: gridX = centerX + 1; gridY = centerY; break;
                 default: gridX = centerX; gridY = centerY;
             }
-
-            // Pass the enemies list to each Enemy constructor
             enemies.add(new Enemy(mazeGenerator, gridX, gridY, enemySize, enemies));
         }
     }
-
 
     private void restartGame() {
         Point startPos = mazeGenerator.getRandomFreePosition();
@@ -200,6 +197,14 @@ public class GameVisualizer extends JPanel {
                 animationProgress = 1.0f;
                 robotGridX = targetGridX;
                 robotGridY = targetGridY;
+                // Проверка на портале и телепортация
+                if (mazeGenerator.isPortal(robotGridX, robotGridY)) {
+                    Point otherPortal = mazeGenerator.getOtherPortal(robotGridX, robotGridY);
+                    robotGridX = otherPortal.x;
+                    robotGridY = otherPortal.y;
+                    targetGridX = robotGridX;
+                    targetGridY = robotGridY;
+                }
                 if (pendingDirection != -1 && pendingDirection != currentDirection) {
                     currentDirection = pendingDirection;
                     isStopped = false;

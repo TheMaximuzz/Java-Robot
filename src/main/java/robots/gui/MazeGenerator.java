@@ -11,6 +11,7 @@ public class MazeGenerator {
     private final int blockSize;
     private final int mazeWidth;
     private final int mazeHeight;
+    private final Point[] portals; // Массив для хранения двух порталов
 
     public MazeGenerator(int width, int height, int blockSize) {
         this.blockSize = blockSize;
@@ -18,6 +19,7 @@ public class MazeGenerator {
         this.mazeHeight = 31; // Фиксированная высота по ASCII-схеме
         this.walls = new ArrayList<>();
         this.freeSpaces = new ArrayList<>();
+        this.portals = new Point[2]; // Два портала
         generateMaze();
     }
 
@@ -37,7 +39,7 @@ public class MazeGenerator {
                 "XXXXXX XX          XX XXXXXX",
                 "XXXXXX XX XXX  XXX XX XXXXXX",
                 "XXXXXX XX X      X XX XXXXXX",
-                "X         X      X         X",
+                "0         X      X         0", // Порталы на позициях (0, 14) и (27, 14)
                 "XXXXXX XX X      X XX XXXXXX",
                 "XXXXXX XX XXXXXXXX XX XXXXXX",
                 "XXXXXX XX          XX XXXXXX",
@@ -56,14 +58,19 @@ public class MazeGenerator {
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
         };
 
+        int portalIndex = 0;
         for (int y = 0; y < asciiMaze.length; y++) {
             String row = asciiMaze[y];
             for (int x = 0; x < row.length(); x++) {
                 char cell = row.charAt(x);
                 if (cell == 'X') {
                     walls.add(new Wall(x * blockSize, y * blockSize, blockSize));
-                } else if (cell == ' ' || cell == 'P' || cell == 'G') {
+                } else if (cell == ' ' || cell == 'P' || cell == 'G' || cell == '0') {
                     freeSpaces.add(new Point(x * blockSize + blockSize/2, y * blockSize + blockSize/2));
+                    if (cell == '0') {
+                        portals[portalIndex] = new Point(x, y);
+                        portalIndex++;
+                    }
                 }
             }
         }
@@ -88,7 +95,7 @@ public class MazeGenerator {
                 "XXXXXX XX          XX XXXXXX",
                 "XXXXXX XX XXX  XXX XX XXXXXX",
                 "XXXXXX XX X      X XX XXXXXX",
-                "X         X      X         X",
+                "0         X      X         0",
                 "XXXXXX XX X      X XX XXXXXX",
                 "XXXXXX XX XXXXXXXX XX XXXXXX",
                 "XXXXXX XX          XX XXXXXX",
@@ -109,6 +116,24 @@ public class MazeGenerator {
         return asciiMaze[gridY].charAt(gridX) != 'X';
     }
 
+    public boolean isPortal(int gridX, int gridY) {
+        for (Point portal : portals) {
+            if (portal.x == gridX && portal.y == gridY) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Point getOtherPortal(int gridX, int gridY) {
+        for (int i = 0; i < portals.length; i++) {
+            if (portals[i].x == gridX && portals[i].y == gridY) {
+                return portals[(i + 1) % portals.length];
+            }
+        }
+        return null;
+    }
+
     public List<Wall> getWalls() {
         return walls;
     }
@@ -122,9 +147,16 @@ public class MazeGenerator {
     }
 
     public void draw(Graphics2D g2d) {
-        g2d.setColor(new Color(0, 255, 255)); // Неоновый циан
+        g2d.setColor(new Color(0, 255, 255)); // Неоновый циан для стен
         for (Wall wall : walls) {
             wall.draw(g2d);
+        }
+        // Отображение порталов желтым цветом
+        g2d.setColor(Color.YELLOW);
+        for (Point portal : portals) {
+            int drawX = portal.x * blockSize;
+            int drawY = portal.y * blockSize;
+            g2d.fillRect(drawX, drawY, blockSize, blockSize);
         }
     }
 
