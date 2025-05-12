@@ -51,17 +51,14 @@ public abstract class BaseInternalFrame extends JInternalFrame {
 
     public void setMaximized(boolean maximized) {
         try {
-            System.out.println(getTitle() + ": Setting maximized=" + maximized + ", current state: icon=" + isIcon() + ", max=" + isMaximum());
             if (!isMaximum() && !isIcon() && getWidth() > 0 && getHeight() > 0) {
                 setNormalBounds(new Rectangle(getX(), getY(), getWidth(), getHeight()));
-                System.out.println(getTitle() + ": Saved normalBounds=" + getNormalBounds());
             }
             setMaximum(maximized);
             if (!maximized) {
                 Rectangle normalBounds = getNormalBounds();
                 if (normalBounds != null && normalBounds.width > 0 && normalBounds.height > 0) {
                     setBounds(normalBounds);
-                    System.out.println(getTitle() + ": Restored normalBounds=" + normalBounds);
                 }
             }
             setVisible(true);
@@ -71,23 +68,20 @@ public abstract class BaseInternalFrame extends JInternalFrame {
             repaint();
             updateDesktopPane();
         } catch (Exception e) {
-            System.err.println(getTitle() + ": Error setting maximized: " + e.getMessage());
+            System.err.println(getTitle() + ": Ошибка с настройками максимизации: " + e.getMessage());
         }
     }
 
     public void setIconified(boolean iconified) {
         try {
-            System.out.println(getTitle() + ": Setting iconified=" + iconified + ", current state: icon=" + isIcon() + ", max=" + isMaximum());
             if (!isIcon() && !isMaximum() && getWidth() > 0 && getHeight() > 0) {
                 setNormalBounds(new Rectangle(getX(), getY(), getWidth(), getHeight()));
-                System.out.println(getTitle() + ": Saved normalBounds=" + getNormalBounds());
             }
             setIcon(iconified);
             if (!iconified) {
                 Rectangle normalBounds = getNormalBounds();
                 if (normalBounds != null && normalBounds.width > 0 && normalBounds.height > 0) {
                     setBounds(normalBounds);
-                    System.out.println(getTitle() + ": Restored normalBounds=" + normalBounds);
                 }
                 setVisible(true);
                 toFront();
@@ -97,13 +91,12 @@ public abstract class BaseInternalFrame extends JInternalFrame {
             repaint();
             updateDesktopPane();
         } catch (Exception e) {
-            System.err.println(getTitle() + ": Error setting iconified: " + e.getMessage());
+            System.err.println(getTitle() + ": Ошибка с настройками сворачивания: " + e.getMessage());
         }
     }
 
     public void restoreMaximizedState(int x, int y, int width, int height) {
         try {
-            System.out.println(getTitle() + ": Restoring maximized state, bounds=[x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + "]");
             if (isIcon()) {
                 setIconified(false);
             }
@@ -116,7 +109,7 @@ public abstract class BaseInternalFrame extends JInternalFrame {
             repaint();
             updateDesktopPane();
         } catch (Exception e) {
-            System.err.println(getTitle() + ": Error restoring maximized state: " + e.getMessage());
+            System.err.println(getTitle() + ": Ошибка сохранения состояния: " + e.getMessage());
         }
     }
 
@@ -124,7 +117,7 @@ public abstract class BaseInternalFrame extends JInternalFrame {
         try {
             return super.isIcon();
         } catch (Exception e) {
-            System.err.println(getTitle() + ": Error checking iconified: " + e.getMessage());
+            System.err.println(getTitle() + ": Ошибка при проверке сворачивания: " + e.getMessage());
             return false;
         }
     }
@@ -133,7 +126,7 @@ public abstract class BaseInternalFrame extends JInternalFrame {
         try {
             return super.isMaximum();
         } catch (Exception e) {
-            System.err.println(getTitle() + ": Error checking maximized: " + e.getMessage());
+            System.err.println(getTitle() + ": Ошибка при проверки максимизации: " + e.getMessage());
             return false;
         }
     }

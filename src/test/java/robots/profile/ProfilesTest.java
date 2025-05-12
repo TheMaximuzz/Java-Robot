@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.*;
 import robots.log.LogWindowSource;
 
-
 public class ProfilesTest {
     private static final String PROFILES_FILE = "profiles.json";
     private File profilesFile;
@@ -53,7 +52,6 @@ public class ProfilesTest {
             gameWindow = new GameWindow(testLocale);
             gameWindow.setBounds(300, 300, 400, 200);
             gameWindow.setVisible(true);
-
 
             GameVisualizer visualizer = (GameVisualizer) ((JPanel) gameWindow.getContentPane().getComponent(0)).getComponent(0);
             visualizer.setRobotPosition(5, 5);
