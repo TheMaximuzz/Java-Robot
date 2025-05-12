@@ -120,17 +120,24 @@ public class GameVisualizer extends JPanel {
 
     private void initializeEnemies() {
         int enemySize = robotSize - 4;
+        int centerX = 14;
+        int centerY = 15;
+
+        enemies.clear(); // Ensure the list is empty before adding new enemies
         for (int i = 0; i < 3; i++) {
-            Point pos;
             int gridX, gridY;
-            do {
-                pos = mazeGenerator.getRandomFreePosition();
-                gridX = pos.x / mazeGenerator.getBlockSize();
-                gridY = pos.y / mazeGenerator.getBlockSize();
-            } while (gridX == robotGridX && gridY == robotGridY);
-            enemies.add(new Enemy(mazeGenerator, gridX, gridY, enemySize));
+            switch (i) {
+                case 0: gridX = centerX - 1; gridY = centerY; break;
+                case 1: gridX = centerX; gridY = centerY - 2; break;
+                case 2: gridX = centerX + 1; gridY = centerY; break;
+                default: gridX = centerX; gridY = centerY;
+            }
+
+            // Pass the enemies list to each Enemy constructor
+            enemies.add(new Enemy(mazeGenerator, gridX, gridY, enemySize, enemies));
         }
     }
+
 
     private void restartGame() {
         Point startPos = mazeGenerator.getRandomFreePosition();
@@ -150,7 +157,6 @@ public class GameVisualizer extends JPanel {
             enemy.setMode(currentMode);
         }
         scheduleNextPhase();
-        //requestFocusInWindow();
     }
 
     private void scheduleNextPhase() {
@@ -340,7 +346,7 @@ public class GameVisualizer extends JPanel {
         this.enemies.clear();
         int enemySize = robotSize - 4;
         for (Profile.MobPosition pos : positions) {
-            Enemy enemy = new Enemy(mazeGenerator, pos.getMobX(), pos.getMobY(), enemySize);
+            Enemy enemy = new Enemy(mazeGenerator, pos.getMobX(), pos.getMobY(), enemySize, enemies);
             enemy.setMode(currentMode);
             this.enemies.add(enemy);
         }

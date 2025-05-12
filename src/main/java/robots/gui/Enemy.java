@@ -2,6 +2,7 @@ package robots.gui;
 
 import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class Enemy {
     private int gridX;
@@ -12,15 +13,20 @@ public class Enemy {
     private final float animationSpeed = 0.2f;
     private final int size;
     private final MazeGenerator mazeGenerator;
-    private java.util.List<Point> pathToPlayer;
+    private List<Point> pathToPlayer;
     private Mode mode = Mode.CHASE;
+    private boolean isInRandomPhase = true;
+    private long randomPhaseEndTime;
+    private static final int CENTER_X = 14;
+    private static final int CENTER_Y = 15;
+    private final List<Enemy> allEnemies; // Reference to all enemies
 
     public enum Mode {
         CHASE,
         CALM
     }
 
-    public Enemy(MazeGenerator mazeGenerator, int startGridX, int startGridY, int size) {
+    public Enemy(MazeGenerator mazeGenerator, int startGridX, int startGridY, int size, List<Enemy> allEnemies) {
         this.mazeGenerator = mazeGenerator;
         this.gridX = startGridX;
         this.gridY = startGridY;
@@ -28,6 +34,8 @@ public class Enemy {
         this.targetGridY = startGridY;
         this.size = size;
         this.pathToPlayer = new ArrayList<>();
+        this.randomPhaseEndTime = System.currentTimeMillis() + 2000 + (int)(Math.random() * 1000);
+        this.allEnemies = allEnemies; // Initialize the list of all enemies
     }
 
     public void setMode(Mode newMode) {
@@ -35,6 +43,10 @@ public class Enemy {
     }
 
     public void update(int playerGridX, int playerGridY) {
+        if (isInRandomPhase && System.currentTimeMillis() > randomPhaseEndTime) {
+            isInRandomPhase = false;
+        }
+
         if (animationProgress < 1.0f) {
             animationProgress += animationSpeed;
             if (animationProgress >= 1.0f) {
@@ -45,37 +57,71 @@ public class Enemy {
             return;
         }
 
-        if (mode == Mode.CHASE) {
+        if (isInRandomPhase) {
+            moveRandomly(true);
+        } else if (mode == Mode.CHASE) {
             pathToPlayer = findPathToPlayer(playerGridX, playerGridY);
             if (pathToPlayer.size() > 1) {
                 Point nextStep = pathToPlayer.get(1);
-                targetGridX = nextStep.x;
-                targetGridY = nextStep.y;
-                animationProgress = 0.0f;
+                if (isPositionFree(nextStep.x, nextStep.y)) {
+                    targetGridX = nextStep.x;
+                    targetGridY = nextStep.y;
+                    animationProgress = 0.0f;
+                }
             }
         } else if (mode == Mode.CALM) {
-            moveRandomly();
+            moveRandomly(false);
         }
     }
 
-    private void moveRandomly() {
-        int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
-        java.util.List<int[]> shuffledDirections = Arrays.asList(directions);
-        Collections.shuffle(shuffledDirections, new Random());
-
-        for (int[] dir : shuffledDirections) {
-            int newGridX = gridX + dir[0];
-            int newGridY = gridY + dir[1];
-            if (mazeGenerator.isCellFree(newGridX, newGridY)) {
-                targetGridX = newGridX;
-                targetGridY = newGridY;
-                animationProgress = 0.0f;
-                break;
+    private boolean isPositionFree(int x, int y) {
+        for (Enemy other : allEnemies) {
+            if (other != this) {
+                // Check if another enemy is at the target position or moving there
+                if ((other.gridX == x && other.gridY == y) ||
+                        (other.targetGridX == x && other.targetGridY == y && other.animationProgress < 1.0f)) {
+                    return false;
+                }
             }
         }
+        return true;
     }
 
-    private java.util.List<Point> findPathToPlayer(int playerGridX, int playerGridY) {
+    private void moveRandomly(boolean preferOutwardMovement) {
+        int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+        List<int[]> possibleDirections = new ArrayList<>();
+
+        for (int[] dir : directions) {
+            int newGridX = gridX + dir[0];
+            int newGridY = gridY + dir[1];
+            if (mazeGenerator.isCellFree(newGridX, newGridY) && isPositionFree(newGridX, newGridY)) {
+                possibleDirections.add(dir);
+            }
+        }
+
+        if (!possibleDirections.isEmpty()) {
+            if (preferOutwardMovement) {
+                possibleDirections.sort((a, b) -> {
+                    double distA = distanceFromCenter(gridX + a[0], gridY + a[1]);
+                    double distB = distanceFromCenter(gridX + b[0], gridY + b[1]);
+                    return Double.compare(distB, distA);
+                });
+            } else {
+                Collections.shuffle(possibleDirections);
+            }
+
+            int[] dir = possibleDirections.get(0);
+            targetGridX = gridX + dir[0];
+            targetGridY = gridY + dir[1];
+            animationProgress = 0.0f;
+        }
+    }
+
+    private double distanceFromCenter(int x, int y) {
+        return Math.sqrt(Math.pow(x - CENTER_X, 2) + Math.pow(y - CENTER_Y, 2));
+    }
+
+    private List<Point> findPathToPlayer(int playerGridX, int playerGridY) {
         Queue<Point> queue = new LinkedList<>();
         Map<Point, Point> parent = new HashMap<>();
         Set<Point> visited = new HashSet<>();
@@ -92,7 +138,7 @@ public class Enemy {
         while (!queue.isEmpty()) {
             Point current = queue.poll();
             if (current.x == goal.x && current.y == goal.y) {
-                java.util.List<Point> path = new ArrayList<>();
+                List<Point> path = new ArrayList<>();
                 Point node = current;
                 while (node != null) {
                     path.add(node);
