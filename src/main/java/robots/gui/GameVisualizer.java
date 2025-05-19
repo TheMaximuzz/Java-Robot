@@ -1,5 +1,6 @@
 package robots.gui;
 
+import robots.log.Logger;
 import robots.profile.Profile;
 
 import java.awt.*;
@@ -28,11 +29,13 @@ public class GameVisualizer extends JPanel {
     private volatile boolean isStopped = false;
     private final List<Enemy> enemies;
     private volatile boolean gameOver = false;
+    private volatile boolean gameWon = false;
     private Timer phaseTimer = new Timer("phase timer", true);
     private Enemy.Mode currentMode = Enemy.Mode.CHASE;
     private static final long CHASE_DURATION = 15000;
     private static final long CALM_DURATION = 5000;
     private ResourceBundle messages;
+    private int score = 0;
 
     private static Timer initTimer() {
         Timer timer = new Timer("events generator", true);
@@ -77,7 +80,7 @@ public class GameVisualizer extends JPanel {
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (gameOver) {
+                if (gameOver || gameWon) {
                     if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                         restartGame();
                     }
@@ -99,7 +102,7 @@ public class GameVisualizer extends JPanel {
                         break;
                 }
                 if (newDirection != -1 && newDirection != pendingDirection) {
-                    pendingDirection = newDirection;
+                    pendingDirection = newDirection; // Fixed: Assign newDirection to pendingDirection
                     if (animationProgress >= 1.0f) {
                         isStopped = false;
                     }
@@ -149,6 +152,8 @@ public class GameVisualizer extends JPanel {
         enemies.clear();
         initializeEnemies();
         gameOver = false;
+        gameWon = false;
+        score = 0;
         currentMode = Enemy.Mode.CHASE;
         for (Enemy enemy : enemies) {
             enemy.setMode(currentMode);
@@ -181,10 +186,39 @@ public class GameVisualizer extends JPanel {
         EventQueue.invokeLater(this::repaint);
     }
 
+    private void checkScoreCollection() {
+        if (animationProgress < 1.0f) return;
+
+        int blockSize = mazeGenerator.getBlockSize();
+        Point playerCenter = new Point(
+                robotGridX * blockSize + blockSize / 2,
+                robotGridY * blockSize + blockSize / 2
+        );
+
+        List<Point> pointsToRemove = new ArrayList<>();
+        for (Point point : mazeGenerator.getScorePoints()) {
+            if (Math.abs(playerCenter.x - point.x) < blockSize / 2 &&
+                    Math.abs(playerCenter.y - point.y) < blockSize / 2) {
+                pointsToRemove.add(point);
+                score += 10;
+                Logger.debug("Score: " + score);
+            }
+        }
+
+        for (Point point : pointsToRemove) {
+            mazeGenerator.removeScorePoint(point);
+        }
+
+        if (mazeGenerator.getScorePoints().isEmpty()) {
+            gameWon = true;
+        }
+    }
+
     protected void onModelUpdateEvent() {
-        if (gameOver) {
+        if (gameOver || gameWon) {
             return;
         }
+        checkScoreCollection();
         updatePlayer();
         updateEnemies();
         onRedrawEvent();
@@ -197,7 +231,6 @@ public class GameVisualizer extends JPanel {
                 animationProgress = 1.0f;
                 robotGridX = targetGridX;
                 robotGridY = targetGridY;
-                // Проверка на портале и телепортация
                 if (mazeGenerator.isPortal(robotGridX, robotGridY)) {
                     Point otherPortal = mazeGenerator.getOtherPortal(robotGridX, robotGridY);
                     robotGridX = otherPortal.x;
@@ -281,6 +314,10 @@ public class GameVisualizer extends JPanel {
         super.paint(g);
         Graphics2D g2d = (Graphics2D) g;
 
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Arial", Font.BOLD, 20));
+        g2d.drawString("Score: " + score, 20, 30);
+
         mazeGenerator.draw(g2d);
         drawRobot(g2d);
         for (Enemy enemy : enemies) {
@@ -303,6 +340,23 @@ public class GameVisualizer extends JPanel {
 
             g.setColor(Color.RED);
             g.drawString(gameOverText, textX, textY);
+        } else if (gameWon) {
+            Font winFont = new Font("Arial", Font.BOLD, 36);
+            g.setFont(winFont);
+            String winText = messages.getString("winMessage");
+
+            FontMetrics metrics = g.getFontMetrics(winFont);
+            int textWidth = metrics.stringWidth(winText);
+            int textHeight = metrics.getHeight();
+            int textX = (900 - textWidth) / 2;
+            int textY = 500;
+
+            g.setColor(Color.BLACK);
+            int padding = 10;
+            g.fillRect(textX - padding, textY - textHeight + padding, textWidth + 2 * padding, textHeight);
+
+            g.setColor(Color.GREEN);
+            g.drawString(winText, textX, textY);
         }
     }
 

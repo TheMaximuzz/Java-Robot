@@ -11,16 +11,20 @@ public class MazeGenerator {
     private final int blockSize;
     private final int mazeWidth;
     private final int mazeHeight;
-    private final Point[] portals; // Массив для хранения двух порталов
+    private final Point[] portals;
+    private final List<Point> scorePoints;
+    private final int scorePointSize = 4;
 
     public MazeGenerator(int width, int height, int blockSize) {
         this.blockSize = blockSize;
-        this.mazeWidth = 28; // Фиксированная ширина по ASCII-схеме
-        this.mazeHeight = 31; // Фиксированная высота по ASCII-схеме
+        this.mazeWidth = 28;
+        this.mazeHeight = 31;
         this.walls = new ArrayList<>();
         this.freeSpaces = new ArrayList<>();
-        this.portals = new Point[2]; // Два портала
+        this.portals = new Point[2];
+        this.scorePoints = new ArrayList<>();
         generateMaze();
+        generateScorePoints();
     }
 
     private void generateMaze() {
@@ -39,7 +43,7 @@ public class MazeGenerator {
                 "XXXXXX XX          XX XXXXXX",
                 "XXXXXX XX XXX  XXX XX XXXXXX",
                 "XXXXXX XX X      X XX XXXXXX",
-                "0         X      X         0", // Порталы на позициях (0, 14) и (27, 14)
+                "0         X      X         0",
                 "XXXXXX XX X      X XX XXXXXX",
                 "XXXXXX XX XXXXXXXX XX XXXXXX",
                 "XXXXXX XX          XX XXXXXX",
@@ -66,12 +70,29 @@ public class MazeGenerator {
                 if (cell == 'X') {
                     walls.add(new Wall(x * blockSize, y * blockSize, blockSize));
                 } else if (cell == ' ' || cell == 'P' || cell == 'G' || cell == '0') {
-                    freeSpaces.add(new Point(x * blockSize + blockSize/2, y * blockSize + blockSize/2));
+                    freeSpaces.add(new Point(x * blockSize + blockSize / 2, y * blockSize + blockSize / 2));
                     if (cell == '0') {
                         portals[portalIndex] = new Point(x, y);
                         portalIndex++;
                     }
                 }
+            }
+        }
+    }
+
+    private void generateScorePoints() {
+        scorePoints.clear();
+        for (Point freeSpace : freeSpaces) {
+            int gridX = freeSpace.x / blockSize;
+            int gridY = freeSpace.y / blockSize;
+            // Skip portals and enemy starting positions
+            if (!isPortal(gridX, gridY) &&
+                    !(gridX == 14 && gridY == 15) && // Center
+                    !(gridX == 13 && gridY == 15) && // Around center
+                    !(gridX == 15 && gridY == 15) &&
+                    !(gridX == 14 && gridY == 13) &&
+                    !(gridX == 14 && gridY == 16)) {
+                scorePoints.add(freeSpace);
             }
         }
     }
@@ -146,17 +167,30 @@ public class MazeGenerator {
         return freeSpaces.get(rand.nextInt(freeSpaces.size()));
     }
 
+    public List<Point> getScorePoints() {
+        return scorePoints;
+    }
+
+    public void removeScorePoint(Point point) {
+        scorePoints.remove(point);
+    }
+
     public void draw(Graphics2D g2d) {
-        g2d.setColor(new Color(0, 255, 255)); // Неоновый циан для стен
+        g2d.setColor(new Color(0, 255, 255));
         for (Wall wall : walls) {
             wall.draw(g2d);
         }
-        // Отображение порталов желтым цветом
         g2d.setColor(Color.YELLOW);
         for (Point portal : portals) {
             int drawX = portal.x * blockSize;
             int drawY = portal.y * blockSize;
             g2d.fillRect(drawX, drawY, blockSize, blockSize);
+        }
+        g2d.setColor(Color.WHITE);
+        for (Point point : scorePoints) {
+            int centerX = point.x;
+            int centerY = point.y;
+            g2d.fillOval(centerX - scorePointSize / 2, centerY - scorePointSize / 2, scorePointSize, scorePointSize);
         }
     }
 
